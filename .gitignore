@@ -1,3 +1,7 @@
+# build
+.gitignore
+build*/
+
 # Prerequisites
 *.d
 
