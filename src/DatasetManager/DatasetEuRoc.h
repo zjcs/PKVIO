@@ -15,6 +15,12 @@ public:
     
     virtual void      initialize(void) override;
     virtual Frame*    load(const int nIndexToRead) override;
+    virtual TpDatasetType       type(void) override {return TpOfflineEuRoc;};
+    
+protected:
+    virtual inline const TpTimeStamp&   getFrameTimeStamp(TpFrameIndex nFrmIndex){return mVecImageTimeStamp[nFrmIndex];}
+    virtual const string                getFrameFileName(TpFrameIndex nFrmIndex){return Type::cvtTimeStampToString(getFrameTimeStamp(nFrmIndex))+".png";}
+    virtual const string                getFrameAbsFileNmae(TpFrameIndex nFrmIndex, bool bTrueLeftFalseRight);
     
 private:
     string            getLeftViewFolder(void);

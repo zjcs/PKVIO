@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     cout << "Version Infor: " << PKVIO::Version::version() << endl;
     
     auto VioSystem = PKVIO::System::System();
-    VioSystem.exec();
+    VioSystem.runVIO();
 
 #ifdef _WINDOWS_
 	system("pause");

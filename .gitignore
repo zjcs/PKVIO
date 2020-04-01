@@ -1,6 +1,8 @@
 # build
 .gitignore
-build*/
+*build*/
+*.kdev4
+.kdev4*/*.*
 
 # Prerequisites
 *.d

@@ -47,10 +47,10 @@ string DatasetEuRoc::getIMUFolder() {
 }
 
 void DatasetEuRoc::getImage(int nIndexToRead, cv::Mat& mLeft, cv::Mat& mRight) {
-    string sLeftFile = getLeftViewFolder() + "/data/" + cvtTimeStampToString(mVecImageTimeStamp[nIndexToRead]) + ".png";
-    mLeft = cv::imread(sLeftFile);
-    string sRightFile = getRightViewFolder() + "/data/" + cvtTimeStampToString(mVecImageTimeStamp[nIndexToRead]) + ".png";
-    mRight = cv::imread(sRightFile);
+    string sLeftFile = getFrameAbsFileNmae(nIndexToRead, true);
+    mLeft = cv::imread(sLeftFile, cv::IMREAD_GRAYSCALE);
+    string sRightFile = getFrameAbsFileNmae(nIndexToRead, false);
+    mRight = cv::imread(sRightFile, cv::IMREAD_GRAYSCALE);
     //cout << sLeftFile <<endl;
 }
 
@@ -162,6 +162,12 @@ void DatasetEuRoc::parseCalibrationIMU(const string& sIMUCalibFile) {
 
 
 void DatasetEuRoc::buildCalibration() {}
+
+
+const string DatasetEuRoc::getFrameAbsFileNmae ( Type::TpFrameIndex nFrmIndex, bool bTrueLeftFalseRight )
+{
+    return ( bTrueLeftFalseRight?getLeftViewFolder() :getRightViewFolder() )+"/data/"+getFrameFileName ( nFrmIndex );
+}
 
 }
 }
