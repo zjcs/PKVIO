@@ -26,7 +26,12 @@ ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/src/Tools)
 ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/src/Type)
 ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/src/Viewer)
 
-ADD_EXECUTABLE(pkvio ${PROJECT_SOURCE_DIR}/src/main.cpp)
+ADD_EXECUTABLE(pkvio 
+    ${PROJECT_SOURCE_DIR}/src/main.cpp
+    # ${PROJECT_SOURCE_DIR}/src/System/System.cpp
+)
+
+# target_link_libraries(pkvio, ${OpenCV_LIBS})
 
 TARGET_LINK_LIBRARIES(pkvio CoVisManager)
 TARGET_LINK_LIBRARIES(pkvio DatasetManager)
