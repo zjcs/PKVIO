@@ -1,6 +1,5 @@
 #include "Draw.h"
 #include <opencv2/highgui.hpp>
-#include <opencv2/features2d.hpp>
 #include <iostream>
 
 using namespace std;
@@ -26,12 +25,26 @@ cv::Mat drawMatch(const cv::Mat& mImgLeft, const Type::TpVecKeyPoints& mKptsLeft
     cv::Mat mImgKptLeft = drawKeyPoints(mImgKptLeft, mKptsLeft);
     cv::Mat mImgKptRight = drawKeyPoints(mImgKptRight, mKptsRight);
     
-    cv::Mat mResult;
+    cv::Mat mDrawMatchResult;
     if(!sWindowTitle_ShowIfNotEmpty.empty()){
-        cv::imshow(sWindowTitle_ShowIfNotEmpty, mResult);
+        cv::imshow(sWindowTitle_ShowIfNotEmpty, mDrawMatchResult);
         cv::waitKey(1);
     }
-    return mResult;
+    return mDrawMatchResult;
+}
+
+cv::Mat drawMatch(const cv::Mat& mImgLeft, const Type::TpVecKeyPoints& mKptsLeft, const cv::Mat& mImgRight, const Type::TpVecKeyPoints& mKptsRight, const Type::TpVecMatchResult& mMatch, bool bTrueHoriFalseVetical /*= true*/, const std::string sWindowTitle_ShowIfNotEmpty /*= ""*/){
+    
+    cv::Mat mDrawMatchResult;
+    cv::drawMatches(mImgLeft, mKptsLeft, mImgRight, mKptsRight, mMatch, mDrawMatchResult);
+    
+    if(!sWindowTitle_ShowIfNotEmpty.empty()){
+        cv::imshow(sWindowTitle_ShowIfNotEmpty, mDrawMatchResult);
+        cv::waitKey(1);
+    }
+    
+    return mDrawMatchResult;
+    
 }
 
 }

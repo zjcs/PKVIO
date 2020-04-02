@@ -1,63 +1,14 @@
 #ifndef __KEYPOINTMANAGER_H__
 #define __KEYPOINTMANAGER_H__
 
+#include <memory>
 #include "../Type/type.h"
 #include "ORBextractor.h"
-#include <memory>
-#include <queue>
+#include "FrameKptsDescriptor.h"
+#include "DescriptorMatch.h"
 
 namespace PKVIO{
 namespace KeyPointManager{
-    
-typedef enum{
-    TpStillExisting,
-    TpNotHere,
-    TpRemoved,
-    TpIsComing
-} TpHistoryStorageState;
-
-typedef struct{
-   TpVecKeyPoints  mKeyPointsLeft; 
-   TpVecDescriptor mDescriptorsLeft;
-   TpVecKeyPoints  mKeyPointsRight; 
-   TpVecDescriptor mDescriptorsRight;
-   Type::TpFrameID mFrameID;
-} TpOneFrameKptDescriptor;
-    
-class DescriptorHistory{
-private:
-   Type::FixLengthQueue<TpOneFrameKptDescriptor> mHistory;
-public:
-    DescriptorHistory():mHistory(20+5){}
-    //operator= (DescriptorHistory& op){}
-
-void push(TpOneFrameKptDescriptor& One){
-    mHistory.push(One);
-}
-
-bool isExisting(const TpFrameID nFrmID){
-    for(auto Iter = mHistory.begin(), EndIter = mHistory.end();Iter!=EndIter;++Iter){
-        const TpOneFrameKptDescriptor& h = *Iter;
-        if(h.mFrameID == nFrmID)
-            return true;
-    }
-    return false;
-    //for(const TpOneFrameKptDescriptor& h in mHistory){
-    //    if(h.mFrameID == nFrmID)
-    //        return true;
-    //}
-    //return false;
-}
-TpOneFrameKptDescriptor& get(const TpFrameID nFrmID){
-    for(auto Iter = mHistory.begin(), EndIter = mHistory.end();Iter!=EndIter;++Iter){
-        TpOneFrameKptDescriptor& h = *Iter;
-        if(h.mFrameID == nFrmID)
-            return h;
-    }
-    
-    throw;
-}
-};
     
 class KeyPointManager{
 public:
@@ -81,6 +32,8 @@ private:
     
     TpFeatureExtractor      mPtrORBExtractorLeft;
     TpFeatureExtractor      mPtrORBExtractorRight;
+    
+    PtrDescriptorMatch      mPtrDesciptorMatcher;
     
     DescriptorHistory       mDescriptorHistoryRecord;
 }; 

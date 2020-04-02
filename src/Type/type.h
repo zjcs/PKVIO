@@ -59,6 +59,13 @@ protected:
 typedef     std::vector<cv::KeyPoint>   TpVecKeyPoints;
 typedef     cv::Mat                     TpVecDescriptor;
 
+typedef vector<cv::DMatch>              TpVecMatchResult;
+typedef pair<int,int>                   TpMatchPair;
+typedef vector<TpMatchPair>             TpVecMatchPairs;
+
+TpMatchPair                             cvtMatchToMatchPair(const cv::DMatch& m);
+
+
 template<typename T>
 class FixLengthQueue: public list<T>
 {

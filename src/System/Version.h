@@ -9,7 +9,7 @@ namespace Version{
     class Version{
     public:
         string str(void){
-            return "0.1";
+            return "0.2";
         }
     };
     

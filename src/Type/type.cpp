@@ -9,6 +9,10 @@ string cvtTimeStampToString(const TpTimeStamp& t){
     sprintf(a,"%19.0f",t);
     return string(a);
 }
+    
+TpMatchPair cvtMatchToMatchPair(const cv::DMatch& m){
+    return std::make_pair(m.queryIdx, m.trainIdx);
+}
 
 
 }

@@ -24,7 +24,7 @@ void KeyPointManager::solve ( const Type::Frame& f )
     extract(f, mKptsDescriptors);
     
     // match;
-    // TODO
+    TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(f, mKptsDescriptors);
     
     // History Record;
     mDescriptorHistoryRecord.push(mKptsDescriptors);
@@ -79,7 +79,8 @@ void KeyPointManager::initializeFeatureExtroctor()
 
 void KeyPointManager::initializeFeatureMatcher()
 {
-    //
+    // true: show the match result.
+    mPtrDesciptorMatcher = std::make_shared<DescriptorMatch>(true);
 }
 
 
