@@ -18,15 +18,15 @@ const TpVecMatchPairs TpDescriptorMatchResult::getMatchPairs() const {
     return vPairs;
 }
 
-TpDescriptorMatchResult DescriptorMatch::match(const Type::Frame& fFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
+TpDescriptorMatchResult DescriptorMatch::match(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
     switch(mEnMatchMethod){
-        case EnKnnWholeImage: return matchByKnn(fFrame, fKptsDesc);
-        case EnBrutForceInWindow: return matchByBrutForceInWindow(fFrame, fKptsDesc);
+        case EnKnnWholeImage: return matchByKnn(fKptsDesc);
+        case EnBrutForceInWindow: return matchByBrutForceInWindow(fKptsDesc);
         default: throw;
     }
 }
 
-TpDescriptorMatchResult DescriptorMatch::matchByKnn(const Type::Frame& fFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
+TpDescriptorMatchResult DescriptorMatch::matchByKnn(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
     vector<TpVecMatchResult> vVecMatchResult;
     const auto& vDescLeft = fKptsDesc.mDescriptorsLeft, vDescRight = fKptsDesc.mDescriptorsRight;
     cv::Ptr<cv::DescriptorMatcher> pKnnMatch = cv::DescriptorMatcher::create("BruteForce");
@@ -52,16 +52,12 @@ TpDescriptorMatchResult DescriptorMatch::matchByKnn(const Type::Frame& fFrame, c
         }
     }
     
-    auto r = TpDescriptorMatchResult(mBestVecMatchResult);
     // Best|Init: 50|500, only about 10%, should limited the search area, and some is wrong match(20%). even with a more stric filter: 1st < 0.8*2nd;
-    showMatchResult(fFrame, fKptsDesc,  r);
-    return r;
-    
+    return TpDescriptorMatchResult(mBestVecMatchResult);
 }
 
 
-TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const Type::Frame& fFrame, 
-                                                                  const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
+TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
     //
     cv::Size mSearchWindowSize(30, 25); 
     cv::Point mSearchWindowOrig(mSearchWindowSize/2);
@@ -106,23 +102,19 @@ TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const Type::Fr
             mBestVecMatchResult.push_back(cv::DMatch(nKptIdxLeft,nMinKptIdxRight, mMinDistance));
         }
     }
-    auto r = TpDescriptorMatchResult(mBestVecMatchResult);
     // Best|Init: 230|500, almost about 50%, and all is right match. even with a less stric filter: 1st < 0.95*2nd;
-    showMatchResult(fFrame, fKptsDesc,  r);
-    
-    return r;
+    return TpDescriptorMatchResult(mBestVecMatchResult);
 }
 
-void DescriptorMatch::showMatchResult(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult){
-    if(!mShowMatchResult)return;
-    
+cv::Mat DescriptorMatch::showMatchResult(const Type::Frame& fFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle) {
     // Log accuracy.
     // int nInitMatch = (int)fKptsDesc.mKeyPointsLeft.size();
     // int nBestMatch = (int)mBestVecMatchResult.get().size();
     // cout << "Match: Best|Init - " << nBestMatch <<"|" <<nInitMatch<<endl;
     
     const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(fFrame);
-    cv::Mat mDrawMatchResult = Tools::drawMatch(fStereoFrame.ImageLeft(), fKptsDesc.mKeyPointsLeft, fStereoFrame.ImageRight(), fKptsDesc.mKeyPointsRight, mBestVecMatchResult.get(), false , "mBestMatch");
+    cv::Mat mDrawMatchResult = Tools::drawMatch(fStereoFrame.ImageLeft(), fKptsDesc.mKeyPointsLeft, fStereoFrame.ImageRight(), fKptsDesc.mKeyPointsRight, mBestVecMatchResult.get(), false , sWindowTitle);
+    return mDrawMatchResult;
 }
 
 }

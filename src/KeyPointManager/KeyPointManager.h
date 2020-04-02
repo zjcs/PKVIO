@@ -20,8 +20,13 @@ public:
     void                    extract(const Frame& f, TpOneFrameKptDescriptor& mKptsDescriptors);
     void                    solve(const Frame& f);
     
-    inline bool             queryDescriptorExisting(const TpFrameID nFrmID){ return mDescriptorHistoryRecord.isExisting(nFrmID); }
-    TpOneFrameKptDescriptor& getDescriptor(const TpFrameID nFrmID) { return mDescriptorHistoryRecord.get(nFrmID); }
+    inline bool             queryDescriptorExisting(const TpFrameID nFrmID){ return mFrameKptsDescriptorHistoryRecord.isExisting(nFrmID); }
+    TpOneFrameKptDescriptor& getDescriptor(const TpFrameID nFrmID) { return mFrameKptsDescriptorHistoryRecord.get(nFrmID); }
+protected:
+    void                    track(const Frame& fCurFrame, const TpOneFrameKptDescriptor& fCurFrameKptDescriptor);
+    const Frame&            getLastFrame(void){
+        
+    }
 private:
     inline void             initialize(void);
     
@@ -35,7 +40,8 @@ private:
     
     PtrDescriptorMatch      mPtrDesciptorMatcher;
     
-    DescriptorHistory       mDescriptorHistoryRecord;
+    FrameKptsDescriptorHistory  mFrameKptsDescriptorHistoryRecord;
+    StereoFrameHistory                mFrameHistoryRecord;
 }; 
 
 }

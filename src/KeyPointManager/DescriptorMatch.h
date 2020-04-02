@@ -27,16 +27,21 @@ class DescriptorMatch{
         EnBrutForceInWindow
     } EnMatchMethod;
 public:
-    DescriptorMatch(bool bShowMatchResult = false, EnMatchMethod eMethod = EnBrutForceInWindow): mEnMatchMethod(eMethod), mShowMatchResult(bShowMatchResult){}
-    TpDescriptorMatchResult  match(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc);
-protected:
-    TpDescriptorMatchResult     matchByKnn(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc);
-    TpDescriptorMatchResult     matchByBrutForceInWindow(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc);
+    DescriptorMatch(EnMatchMethod eMethod = EnBrutForceInWindow)
+    : mEnMatchMethod(eMethod)
+    , mStrDefaultWindowTitle("mBestMatch")
+    {}
     
-    void                        showMatchResult(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult);
+    TpDescriptorMatchResult     match(const TpOneFrameKptDescriptor& fKptsDesc);
+    cv::Mat                     showMatchResult(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle = "mBestMatch");
+protected:
+    TpDescriptorMatchResult     matchByKnn(const TpOneFrameKptDescriptor& fKptsDesc);
+    TpDescriptorMatchResult     matchByBrutForceInWindow(const TpOneFrameKptDescriptor& fKptsDesc);
+    
 private:
     const EnMatchMethod         mEnMatchMethod; 
-    const bool                  mShowMatchResult;
+    
+    const string                mStrDefaultWindowTitle;
 };   
 
 typedef std::shared_ptr<DescriptorMatch> PtrDescriptorMatch;

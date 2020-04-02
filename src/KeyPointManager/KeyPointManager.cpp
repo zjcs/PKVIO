@@ -24,10 +24,17 @@ void KeyPointManager::solve ( const Type::Frame& f )
     extract(f, mKptsDescriptors);
     
     // match;
-    TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(f, mKptsDescriptors);
+    TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(mKptsDescriptors);
+    mPtrDesciptorMatcher->showMatchResult(f, mKptsDescriptors, mMatchResult, "Left | Right - Match Result");
     
+    // track from previous frames.
+    track(f, mKptsDescriptors);
+    
+    // TODO : Implement EXCORP function, and move this operation before track.
     // History Record;
-    mDescriptorHistoryRecord.push(mKptsDescriptors);
+    mFrameKptsDescriptorHistoryRecord.push(mKptsDescriptors);
+    const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(f);
+    mFrameHistoryRecord.push(fStereoFrame);
 }
 
 void KeyPointManager::extract ( const Type::Frame& f , TpOneFrameKptDescriptor& mKptsDescriptors) 
@@ -80,15 +87,43 @@ void KeyPointManager::initializeFeatureExtroctor()
 void KeyPointManager::initializeFeatureMatcher()
 {
     // true: show the match result.
-    mPtrDesciptorMatcher = std::make_shared<DescriptorMatch>(true);
+    mPtrDesciptorMatcher = std::make_shared<DescriptorMatch>();
 }
 
 
 void KeyPointManager::initializeHistoryRecord()
 {
-    //mDescriptorHistoryRecord = DescriptorHistory();
+    //mFrameKptsDescriptorHistoryRecord = DescriptorHistory();
 }
 
+
+
+void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fCurFrameKptDescriptor) {
+    if(mFrameKptsDescriptorHistoryRecord.empty() || mFrameHistoryRecord.empty())
+        return;
+    
+    TpOneFrameKptDescriptor&    fLastFrameKptDescriptor = mFrameKptsDescriptorHistoryRecord.back();
+    Frame&                      fLastFrame              = mFrameHistoryRecord.back();
+    
+    const StereoFrame& fCurStereoFrame              = dynamic_cast<const StereoFrame&>(fCurFrame);
+    const StereoFrame& fLastStereoFrame             = dynamic_cast<const StereoFrame&>(fLastFrame);
+    
+    StereoFrame                 mPrevLeftAndCurLeftFrame;
+    mPrevLeftAndCurLeftFrame.initFrameID(fCurStereoFrame.FrameID());
+    mPrevLeftAndCurLeftFrame.getImageLeft()         = fLastStereoFrame.ImageLeft();
+    mPrevLeftAndCurLeftFrame.getImageRight()        = fCurStereoFrame.ImageLeft();
+    
+    TpOneFrameKptDescriptor     mPrevAndCurLeftKptsDescriptor;
+    mPrevAndCurLeftKptsDescriptor.mFrameID          = mPrevLeftAndCurLeftFrame.FrameID();
+    mPrevAndCurLeftKptsDescriptor.mDescriptorsLeft  = fLastFrameKptDescriptor.mDescriptorsLeft;
+    mPrevAndCurLeftKptsDescriptor.mKeyPointsLeft    = fLastFrameKptDescriptor.mKeyPointsLeft;
+    mPrevAndCurLeftKptsDescriptor.mDescriptorsRight = fCurFrameKptDescriptor.mDescriptorsLeft;
+    mPrevAndCurLeftKptsDescriptor.mKeyPointsRight   = fCurFrameKptDescriptor.mKeyPointsLeft;
+    
+    // Pre-Cur is about 60%, 300/500 match and a little better than left-right's 50%, and all is right match.
+    TpDescriptorMatchResult mPrevAndCurMatchResult = mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+    mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
+}
 
 }
 }
