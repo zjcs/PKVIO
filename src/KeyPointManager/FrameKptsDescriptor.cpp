@@ -6,7 +6,7 @@ namespace KeyPointManager{
 TpFuncIsIDAndFrameMatch     FuncIsIDAndFrameMatch = [](Type::Frame&fFrame, const TpFrameID nFrmID)->bool{return fFrame.FrameID() == nFrmID;};
 //std::function(bool<TpOneFrameKptDescriptor&fFrame,const TpFrameID nFrameID>)
 TpFuncIsIDAndFrameKptsDescriptorMatch    
-                            FuncIsIDAndFrameKptsDescriptorMatch = [](TpOneFrameKptDescriptor&fFrame,const TpFrameID nFrameID)->bool {return fFrame.mFrameID==nFrameID;};
+                            FuncIsIDAndFrameKptsDescriptorMatch = [](TpOneFrameKptDescriptor&fFrame,const TpFrameID nFrameID)->bool {return fFrame.FrameID()==nFrameID;};
 TpFuncIsFrameStasify        FuncIsKeyFrame = [](TpOneFrameKptDescriptor& T)->bool{ throw; return false; };
 TpFuncIsFrameStasify        FuncIsNotKeyFrame = [](TpOneFrameKptDescriptor& T)->bool{return !FuncIsKeyFrame(T);};
 //

@@ -4,6 +4,7 @@
 #include <functional>
 #include "../DatasetManager/DatasetInterface.h"
 #include "../KeyPointManager/KeyPointManager.h"
+#include "../CoVisManager/CoVisManager.h"
 
 using namespace std;
 
@@ -29,6 +30,7 @@ private:
     TpFuncDoExec mPtrFuncDoExec;
     DatasetManager::DatasetInterfacePtr mPtrDataset;
     KeyPointManager::KeyPointManager    mKeyPointMgr;
+    CoVisManager::CoVisManager          mCoVisMgr;
 };
 
 }

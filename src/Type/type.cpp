@@ -4,6 +4,9 @@
 namespace PKVIO{
 namespace Type{
     
+const TpFrameID     INVALIDFRAMEID      = -1;     
+const TpKeyPointID  INVALIDKEYPOINTID   = -1;     
+
 string cvtTimeStampToString(const TpTimeStamp& t){
     char a[100];
     sprintf(a,"%19.0f",t);

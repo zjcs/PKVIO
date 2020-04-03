@@ -3,11 +3,13 @@
 
 #include "Draw.h"
 #include "Compare.h"
+#include "Timer.h"
 
 namespace PKVIO{
     namespace Tools{
         using namespace Draw;
         using namespace Compare;
+        using namespace Timer;
     }
 }
 

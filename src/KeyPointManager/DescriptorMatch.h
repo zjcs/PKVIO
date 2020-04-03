@@ -14,11 +14,33 @@ namespace KeyPointManager{
 
 class TpDescriptorMatchResult{
 public:
-    TpDescriptorMatchResult(const TpVecMatchResult& r):mMatch(r){}
-    inline const TpVecMatchResult& get(void) const {return mMatch;}
-    const TpVecMatchPairs getMatchPairs(void) const;
+    TpDescriptorMatchResult(const TpFrameID nFrameIDLeft, const TpFrameID nFrameIDRight, const TpVecMatchResult& r, const int nCountKptsLeft = -1,const int nCountKptsRight = -1)
+    : mMatch(r) 
+    , mFrameIDLeft(nFrameIDLeft) , mFrameIDRight(nFrameIDRight)
+    , mCountKptsLeft(nCountKptsLeft), mCountKptsRight(nCountKptsRight)
+    {}
+    
+    inline const TpVecMatchResult&  get(void) const {return getMatch();} 
+    const TpVecMatchPairs           getMatchPairs(void) const;
+    inline const TpVecMatchResult&  getMatch(void)const{return mMatch;}
+    
+    inline void getMatchKptIndex(const int nIdxMatch, int& nKptIdxInLeft, int& nKptIdxInRight) const {
+        const auto& mOneMatch   = mMatch[nIdxMatch];
+        nKptIdxInLeft           = mOneMatch.queryIdx;
+        nKptIdxInRight          = mOneMatch.trainIdx;
+    }
+    
+    inline const int                getCountMatchKpts(void) const {return mMatch.size();}
+    inline const int                getCountNonDuplicateKpts(void) const {return getCountKptsLeft()+getCountKptsRight()-getCountMatchKpts();}
+    
+    inline const TpFrameID          getFrameIDLeft(void)const{return mFrameIDLeft;}
+    inline const TpFrameID          getFrameIDRight(void)const{return mFrameIDRight;}
+    inline const int                getCountKptsLeft(void)const {return mCountKptsLeft;}
+    inline const int                getCountKptsRight(void)const {return mCountKptsRight;}
 private:
-    TpVecMatchResult mMatch;
+    TpVecMatchResult                mMatch;
+    TpFrameID                       mFrameIDLeft,   mFrameIDRight;
+    int                             mCountKptsLeft, mCountKptsRight;
 };
     
 class DescriptorMatch{

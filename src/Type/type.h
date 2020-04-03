@@ -5,6 +5,7 @@
 #include <queue>
 #include <list>
 #include <functional>
+#include <map>
 
 using namespace std;
 
@@ -13,6 +14,16 @@ namespace Type{
 typedef int     TpFrameID;
 typedef int     TpFrameIndex;
 typedef double  TpTimeStamp;
+
+typedef int     TpKeyPointID;
+typedef int     TpKeyPointIndex;
+
+extern const TpFrameID      INVALIDFRAMEID;     
+extern const TpKeyPointID   INVALIDKEYPOINTID;     
+inline bool                 isInvalideFrameID(const TpFrameID nFrameID){return nFrameID==INVALIDFRAMEID;}
+inline bool                 isInvalideKeyPointID(const TpKeyPointID nKptID){return nKptID==INVALIDKEYPOINTID;}
+
+typedef map<TpFrameID, TpFrameIndex> TpMapFrameID2FrameIndex;
 
 typedef enum {
     TpMono			= 0x01<<0,
@@ -35,15 +46,19 @@ public:
 
 class Frame{
 public:
-    virtual                 ~Frame(){}
-    virtual TpFrame         type(void) const {return TpMono;}
-    inline const TpFrameID& FrameID(void)const { return mFrmID; }
-    inline void             initFrameID(const TpFrameID& nFrmID){ mFrmID = nFrmID; };
-    inline cv::Mat&         getImage(void) { return mImage; }
-    inline const cv::Mat&   Image(void) const {return mImage; }
+    virtual                     ~Frame(){}
+    virtual TpFrame             type(void) const {return TpMono;}
+    inline const TpFrameID&     FrameID(void)const { return mFrameID; }
+    inline void                 initFrameID(const TpFrameID& nFrmID){ mFrameID = nFrmID; };
+    inline void                 initFrameIndex(const TpFrameIndex& nFrmIndex){ mFrameIndex = nFrmIndex; };
+    inline cv::Mat&             getImage(void) { return mImage; }
+    inline const cv::Mat&       Image(void) const {return mImage; }
+    inline TpFrameIndex&        FrameIndex(void){ return mFrameIndex; }
+    inline const TpFrameIndex   getFrameIndex(void)const{ return mFrameIndex; }
 protected:
-    cv::Mat mImage;
-    TpFrameID mFrmID;
+    cv::Mat         mImage;
+    TpFrameID       mFrameID;
+    TpFrameIndex    mFrameIndex;
 };
 
 class StereoFrame: public Frame{
@@ -57,6 +72,16 @@ protected:
     cv::Mat mImageRight;
 };
     
+
+template<typename TpID>
+class IDGenerator{
+public:
+    IDGenerator(TpID nFirstIDToGenerate = 0): mNextIDToGenerate(nFirstIDToGenerate){}
+    TpID create(void){ return mNextIDToGenerate++; }
+private:
+    TpID mNextIDToGenerate;
+};
+
 typedef     std::vector<cv::KeyPoint>   TpVecKeyPoints;
 typedef     cv::Mat                     TpVecDescriptor;
 

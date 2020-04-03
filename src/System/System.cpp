@@ -48,16 +48,24 @@ void System::showVideoOnly() {
 
 
 void System::runVIO() {
+    
     auto FuncDorunVIO = [&](){
         for (int nIndex = 0; !mPtrDataset->isFinished(); ++nIndex) {
             Frame& mCurFrame = mPtrDataset->read();
+            
             
             if(mCurFrame.getImage().empty() && DatasetManager::isOfflineDatasetType(mPtrDataset->type())){
                 FrameInfo mFrmInfo = dynamic_cast<DatasetOfflineImp*>(mPtrDataset.get())->getFrameInfor(mCurFrame.FrameID());
                 cout<< "Empyt:" << mFrmInfo.mFrameIndex << " - " << mFrmInfo.mStrFileName <<endl;
             }
             
-            mKeyPointMgr.solve(mCurFrame);
+            //cout << "Feature Matching ..." <<endl;
+            const KeyPointManager::FrameMatchResult& mFrameMatchResult = mKeyPointMgr.solve(mCurFrame);
+            //cout << "Feature Matching Finish." <<endl;
+            
+            //cout << "CoVis Graph ..." <<endl;
+            mCoVisMgr.solve(mCurFrame, mFrameMatchResult);
+            //cout << "CoVis Graph Finish." <<endl;
             
             cv::Mat& mImgToShow = mCurFrame.getImage();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){

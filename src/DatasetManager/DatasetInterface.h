@@ -7,15 +7,6 @@
 namespace PKVIO{
 namespace DatasetManager{
     
-    template<typename TpID>
-    class IDGenerator{
-    public:
-        IDGenerator(TpID nFirstIDToGenerate = 0): mNextIDToGenerate(nFirstIDToGenerate){}
-        TpID create(void){ return mNextIDToGenerate++; }
-    private:
-        TpID mNextIDToGenerate;
-    };
-    
     typedef enum {
         TpOnlie             = 0x00<<0,
         TpOffline           = 0x01<<0,

@@ -18,8 +18,11 @@ typedef struct{
     TpVecDescriptor mDescriptorsLeft;
     TpVecKeyPoints  mKeyPointsRight; 
     TpVecDescriptor mDescriptorsRight;
-    Type::TpFrameID mFrameID;
-    inline const TpFrameID& FrameID(void)const { return mFrameID; }
+    Type::TpFrameID mFrameIDLeft;
+    Type::TpFrameID mFrameIDRight;
+    inline const TpFrameID& FrameID(void)const { return FrameIDLeft(); }
+    inline const TpFrameID& FrameIDLeft(void)const { return mFrameIDLeft; }
+    inline const TpFrameID& FrameIDRight(void)const { return mFrameIDRight; }
    
 } TpOneFrameKptDescriptor;
 

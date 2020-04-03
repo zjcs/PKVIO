@@ -1,5 +1,7 @@
 #include "KeyPointManager.h"
 #include <iostream>
+#include "../Tools/Tools.h"
+
 
 namespace PKVIO{
 namespace KeyPointManager{
@@ -17,8 +19,11 @@ void KeyPointManager::initialize(void) {
     initializeHistoryRecord();
 }
 
-void KeyPointManager::solve ( const Type::Frame& f )
+FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
 {
+   //AutoLogTimer("KeyPoint extract and match");
+   mFrameMatchResult.clear();
+    
     // extract;
     TpOneFrameKptDescriptor mKptsDescriptors;
     extract(f, mKptsDescriptors);
@@ -26,6 +31,7 @@ void KeyPointManager::solve ( const Type::Frame& f )
     // match;
     TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(mKptsDescriptors);
     mPtrDesciptorMatcher->showMatchResult(f, mKptsDescriptors, mMatchResult, "Left | Right - Match Result");
+    mFrameMatchResult.pushInnerFrameDescriptorMatchResult(mMatchResult);
     
     // track from previous frames.
     track(f, mKptsDescriptors);
@@ -35,10 +41,13 @@ void KeyPointManager::solve ( const Type::Frame& f )
     mFrameKptsDescriptorHistoryRecord.push(mKptsDescriptors);
     const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(f);
     mFrameHistoryRecord.push(fStereoFrame);
+    
+    return getFrameMatchResult();
 }
 
 void KeyPointManager::extract ( const Type::Frame& f , TpOneFrameKptDescriptor& mKptsDescriptors) 
 {    
+    //AutoLogTimer("KeyPoint extract");
     if(f.type()!= Type::TpFrame::TpStereo){
         cout << "Error: Frame type donot match, exit."<<endl;
         throw;
@@ -46,12 +55,13 @@ void KeyPointManager::extract ( const Type::Frame& f , TpOneFrameKptDescriptor& 
     
     const Type::StereoFrame& sf = dynamic_cast<const Type::StereoFrame&>(f);
     //auto& mImgLeft = sf.
-    auto& mImgLeft = sf.ImageLeft();
+    auto& mImgLeft  = sf.ImageLeft();
     auto& mImgRight = sf.ImageRight();
     
     //int nRows = mImgLeft.rows, nCols = mImgLeft.cols;
     
-    mKptsDescriptors.mFrameID = f.FrameID();
+    mKptsDescriptors.mFrameIDLeft   = f.FrameID();
+    mKptsDescriptors.mFrameIDRight  = f.FrameID();
     (*mPtrORBExtractorLeft)(mImgLeft, cv::Mat(), mKptsDescriptors.mKeyPointsLeft, mKptsDescriptors.mDescriptorsLeft);
     (*mPtrORBExtractorRight)(mImgRight, cv::Mat(), mKptsDescriptors.mKeyPointsRight, mKptsDescriptors.mDescriptorsRight);
 }
@@ -99,6 +109,8 @@ void KeyPointManager::initializeHistoryRecord()
 
 
 void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fCurFrameKptDescriptor) {
+    //AutoLogTimer("KeyPoint track");
+    
     if(mFrameKptsDescriptorHistoryRecord.empty() || mFrameHistoryRecord.empty())
         return;
     
@@ -109,12 +121,13 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     const StereoFrame& fLastStereoFrame             = dynamic_cast<const StereoFrame&>(fLastFrame);
     
     StereoFrame                 mPrevLeftAndCurLeftFrame;
-    mPrevLeftAndCurLeftFrame.initFrameID(fCurStereoFrame.FrameID());
+    mPrevLeftAndCurLeftFrame.initFrameID(fLastStereoFrame.FrameID());
     mPrevLeftAndCurLeftFrame.getImageLeft()         = fLastStereoFrame.ImageLeft();
     mPrevLeftAndCurLeftFrame.getImageRight()        = fCurStereoFrame.ImageLeft();
     
     TpOneFrameKptDescriptor     mPrevAndCurLeftKptsDescriptor;
-    mPrevAndCurLeftKptsDescriptor.mFrameID          = mPrevLeftAndCurLeftFrame.FrameID();
+    mPrevAndCurLeftKptsDescriptor.mFrameIDLeft      = fLastStereoFrame.FrameID();
+    mPrevAndCurLeftKptsDescriptor.mFrameIDRight     = fCurStereoFrame.FrameID();
     mPrevAndCurLeftKptsDescriptor.mDescriptorsLeft  = fLastFrameKptDescriptor.mDescriptorsLeft;
     mPrevAndCurLeftKptsDescriptor.mKeyPointsLeft    = fLastFrameKptDescriptor.mKeyPointsLeft;
     mPrevAndCurLeftKptsDescriptor.mDescriptorsRight = fCurFrameKptDescriptor.mDescriptorsLeft;
@@ -122,6 +135,11 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     
     // Pre-Cur is about 60%, 300/500 match and a little better than left-right's 50%, and all is right match.
     TpDescriptorMatchResult mPrevAndCurMatchResult = mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+        
+    mFrameMatchResult.pushOuterFrameDescriptorMatchResult(mPrevAndCurMatchResult);
+    
+    
+    //AutoLogTimer("KeyPoint show match");
     mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
 }
 

@@ -27,6 +27,9 @@ TpDescriptorMatchResult DescriptorMatch::match(const PKVIO::KeyPointManager::TpO
 }
 
 TpDescriptorMatchResult DescriptorMatch::matchByKnn(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
+    
+    const int nCountKptsLeft = (int)fKptsDesc.mKeyPointsLeft.size(), nCountKptsRight = (int)fKptsDesc.mKeyPointsRight.size();
+    
     vector<TpVecMatchResult> vVecMatchResult;
     const auto& vDescLeft = fKptsDesc.mDescriptorsLeft, vDescRight = fKptsDesc.mDescriptorsRight;
     cv::Ptr<cv::DescriptorMatcher> pKnnMatch = cv::DescriptorMatcher::create("BruteForce");
@@ -53,7 +56,7 @@ TpDescriptorMatchResult DescriptorMatch::matchByKnn(const PKVIO::KeyPointManager
     }
     
     // Best|Init: 50|500, only about 10%, should limited the search area, and some is wrong match(20%). even with a more stric filter: 1st < 0.8*2nd;
-    return TpDescriptorMatchResult(mBestVecMatchResult);
+    return TpDescriptorMatchResult(fKptsDesc.FrameIDLeft(), fKptsDesc.FrameIDRight(), mBestVecMatchResult, nCountKptsLeft, nCountKptsRight);
 }
 
 
@@ -66,18 +69,21 @@ TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::K
     //cout << cv::CV_8UC32 <<endl;
     //cv::CV_8UC3;
     
+    const int nCountKptsLeft = (int)fKptsDesc.mKeyPointsLeft.size(), nCountKptsRight = (int)fKptsDesc.mKeyPointsRight.size();
+    
     TpVecMatchResult mBestVecMatchResult;
-    for(int nKptIdxLeft = 0, nSzKptLeft = (int)fKptsDesc.mKeyPointsLeft.size();nKptIdxLeft<nSzKptLeft;++nKptIdxLeft){
-        auto& KptLeft = fKptsDesc.mKeyPointsLeft[nKptIdxLeft].pt;
-        auto _KptLeft = cv::Point(KptLeft.x+mSearchWindowOrig.x, KptLeft.y+mSearchWindowOrig.y);
+    for(int nKptIdxRight = 0;nKptIdxRight<nCountKptsRight;++nKptIdxRight){
+        auto& KptRight = fKptsDesc.mKeyPointsRight[nKptIdxRight].pt;
+        auto _KptRight = cv::Point(KptRight.x+mSearchWindowOrig.x, KptRight.y+mSearchWindowOrig.y);
+        auto mKptRightDesc = (cv::Mat)fKptsDesc.mDescriptorsRight.row(nKptIdxRight);
         
-        int nMinKptIdxRight = -1; float mMinDistance = 1000000, mMin2ndDistance = mMinDistance+1; 
-        for(int nKptIdxRight = 0, nSzKptRight = (int)fKptsDesc.mKeyPointsRight.size();nKptIdxRight<nSzKptRight;++nKptIdxRight){
-            auto& KptRight = fKptsDesc.mKeyPointsRight[nKptIdxRight].pt;
-            auto dDistance = cv::Point(_KptLeft.x-KptRight.x,_KptLeft.y-KptRight.y);
+        int nMinKptIdxLeft = -1; float mMinDistance = 1000000, mMin2ndDistance = mMinDistance+1; 
+        for(int nKptIdxLeft = 0;nKptIdxLeft<nCountKptsLeft;++nKptIdxLeft){
+            auto& KptLeft = fKptsDesc.mKeyPointsLeft[nKptIdxLeft].pt;
+            auto dDistance = cv::Point(_KptRight.x-KptLeft.x,_KptRight.y-KptLeft.y);
+            
             if(Tools::isInWindow(dDistance, mSearchWindowSize)){
                 auto mKptLeftDesc = (cv::Mat)fKptsDesc.mDescriptorsLeft.row(nKptIdxLeft);
-                auto mKptRightDesc = (cv::Mat)fKptsDesc.mDescriptorsRight.row(nKptIdxRight);
                 //cout << mKptLeftDesc.rows << "-" << mKptLeftDesc.cols << "-" << mKptLeftDesc.channels() << "-" << mKptLeftDesc.type() << endl;
                 //cout << mKptRightDesc.rows << "-" << mKptRightDesc.cols << "-" << mKptRightDesc.channels() << "-" << mKptRightDesc.type() << endl;
                 auto fDistance = 0;
@@ -90,7 +96,7 @@ TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::K
                 fDistance = std::sqrt(fDistance);
                 //cout << fDistance<<endl;
                 if(fDistance<mMinDistance){
-                    nMinKptIdxRight = nKptIdxRight;
+                    nMinKptIdxLeft = nKptIdxLeft;
                     mMin2ndDistance = mMinDistance;
                     mMinDistance = fDistance;
                 }
@@ -99,11 +105,11 @@ TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::K
             
         }
         if(mMinDistance<mMin2ndDistance*0.95){
-            mBestVecMatchResult.push_back(cv::DMatch(nKptIdxLeft,nMinKptIdxRight, mMinDistance));
+            mBestVecMatchResult.push_back(cv::DMatch(nMinKptIdxLeft,nKptIdxRight,mMinDistance));
         }
     }
     // Best|Init: 230|500, almost about 50%, and all is right match. even with a less stric filter: 1st < 0.95*2nd;
-    return TpDescriptorMatchResult(mBestVecMatchResult);
+    return TpDescriptorMatchResult(fKptsDesc.FrameIDLeft(), fKptsDesc.FrameIDRight(), mBestVecMatchResult, nCountKptsLeft, nCountKptsRight);
 }
 
 cv::Mat DescriptorMatch::showMatchResult(const Type::Frame& fFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle) {

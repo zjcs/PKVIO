@@ -31,6 +31,7 @@ Frame* DatasetEuRoc::load(const int nIndexToRead) {
     getIMU();
     // Generate FrameID;
     pStereoIMUFrame->initFrameID(GeneratorFrameID());
+    pStereoIMUFrame->initFrameIndex(nIndexToRead);
     return pStereoIMUFrame;
 }
 
