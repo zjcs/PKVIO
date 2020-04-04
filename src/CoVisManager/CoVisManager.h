@@ -4,6 +4,7 @@
 #include "../KeyPointManager/KeyPointManager.h"
 #include "../Type/type.h"
 #include "KeyPointIDManager.h"
+#include "CoVisGraph.h"
 
 namespace PKVIO
 {
@@ -15,18 +16,21 @@ typedef std::vector<TpFrameID> TpVecCoVisFrameIDs;
 class CoVisManager
 {
 public:
-    void solve(const Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult);
+    CoVisManager();
     
-    TpVecCoVisFrameIDs getCoVisFrameIDs(const TpFrameID nFrameIDQuery) const;
+    void                        solve(const Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult);
+    
+    TpVecCoVisFrameIDs          getCoVisFrameIDs(const TpFrameID nFrameIDQuery) const;
     
 protected:
-    TpMapFrameID2FrameIndex initFrameID2FrameIndexOfMatchResult(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
+    TpMapFrameID2FrameIndex     initFrameID2FrameIndexOfMatchResult(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     
-    void copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
+    void                        copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     
-    void updateCoVisGraph(void);
+    void                        updateCoVisGraph(void);
 private:
     KeyPointManager::KeyPointIDManager mKeyPointIDManager;
+    TpPtrCoVisGraph                    mPtrCoVisGraph;
 };
     
 }

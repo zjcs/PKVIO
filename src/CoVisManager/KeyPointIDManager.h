@@ -67,7 +67,7 @@ public:
     
     inline TpKeyPointID                 GenerateKeyPointID(void){ return mKeyPointIDGeneration.create();}
 private:
-    IDGenerator<TpKeyPointID> mKeyPointIDGeneration;
+    Type::IDGenerator<TpKeyPointID> mKeyPointIDGeneration;
     
     TpMapFrameID2FrameIndex mSetFrameID2FrameIndex;
     vector<TpFrameID> mSetFrameIndex2FrameID;

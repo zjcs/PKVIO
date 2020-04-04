@@ -20,7 +20,7 @@ namespace DatasetManager{
     
     class DatasetInterface{
     public:
-        typedef IDGenerator<TpFrameID> FrameIDGenerator;
+        typedef Type::IDGenerator<TpFrameID> FrameIDGenerator;
         virtual ~DatasetInterface() {};
         virtual TpDatasetType type(void) = 0;
         virtual void initialize(void) {};

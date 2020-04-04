@@ -10,6 +10,12 @@ namespace PKVIO
 {
 namespace CoVisManager
 {
+
+CoVisManager::CoVisManager() 
+: mPtrCoVisGraph(std::make_shared<CoVisGraph>())
+{
+    
+}
     
 void CoVisManager::solve (const Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult ) 
 {
@@ -49,12 +55,14 @@ Type::TpMapFrameID2FrameIndex CoVisManager::initFrameID2FrameIndexOfMatchResult(
 
 void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult)
 {
+    // about 0.05ms for one Co-Vis Frame Pair.
     //Tools::Timer CoVisCopyIDTimer("CoVis: copyID");
     
     TpMapFrameID2FrameIndex mMapFrameID2FrameIndex = initFrameID2FrameIndexOfMatchResult(mFrameMatchResult);
     
     //TODO: if stereo, two keypoints in left and right should have a ID when they satisfy the rule below.
     int nSzOuterMatch = mFrameMatchResult.sizeOuterFrameDescriptorMatchResult();
+    TpVecCoVisFramePairAndWeight nVecCoVisFramePairAndWeight;
     for(int nIdxOuterMatch =0; nIdxOuterMatch<nSzOuterMatch; ++nIdxOuterMatch)
     {
         auto& mPrevAndCurFrameMatchResult    = mFrameMatchResult.getOuterFrameDescriptorMatchResult(nIdxOuterMatch);
@@ -70,10 +78,13 @@ void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPoint
         KeyPointManager::TpOneFrameIDManager mPrevFrameIDMgr = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nPrevFrameIndex);
         KeyPointManager::TpOneFrameIDManager mCurFrameIDMgr  = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nCurFrameIndex);
         
+        int nCountCoVisID = 0;
+        
         for(int nIdxKptMatch = 0;nIdxKptMatch<nSzKptsMatch;++nIdxKptMatch)
         {
             mPrevAndCurFrameMatchResult.getMatchKptIndex((const int)nIdxKptMatch, nKptIdxInPrev, nKptIdxInCur);
             TpKeyPointID& mKptIDInPrev = mPrevFrameIDMgr.KeyPointID(nKptIdxInPrev);
+            
             if(Type::isInvalideKeyPointID(mKptIDInPrev)){
                 //TODO : should have enough parallax to be able triangule a new 3d point, then general ID.
                 mPrevFrameIDMgr.InitializeKptID(mKptIDInPrev, mKeyPointIDManager.GenerateKeyPointID());
@@ -88,9 +99,13 @@ void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPoint
                     throw;
                 }
                 mCurFrameIDMgr.InitializeKptID(mKptIDInCur, mKptIDInPrev);
+                ++nCountCoVisID;
             }
         }
         
+        if(nCountCoVisID>0){
+            nVecCoVisFramePairAndWeight.push_back(CoVisFramePairAndWeight(nPrevFrameID, nCurFrameID, nCountCoVisID));
+        }
     }
 }
 
@@ -105,6 +120,7 @@ TpVecCoVisFrameIDs CoVisManager::getCoVisFrameIDs(const Type::TpFrameID nFrameID
     throw;
     return vCoVisFrameIDs;
 }
+
 
 }
 }
