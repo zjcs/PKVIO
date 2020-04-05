@@ -31,6 +31,9 @@ typedef vector<cv::DMatch>              TpVecMatchResult;
 typedef pair<int,int>                   TpMatchPair;
 typedef vector<TpMatchPair>             TpVecMatchPairs;
 
+typedef int                             TpMapPointID;
+extern const TpMapPointID               INVALIDMAPPOINTID;
+
 
 typedef enum{
     EnNonKF,

@@ -42,6 +42,7 @@ public:
         // copy ID;
         nVecKptIDs = getFirstDetectedKptIDs();
     }
+    inline const TpLstKeyPointIndex&   getFirstDetectedKptIndex(void){return mLstFirstDetectedKptIndex;}
     
     inline int                          sizeKeyPoints(void){return mVecKeyPointIDs.size();}
     inline int                          sizeKeyPointsWithID(void){ 
@@ -74,7 +75,7 @@ public:
     }
 private:
     TpVecKeyPointID                     mVecKeyPointIDs;
-    list<TpKeyPointIndex>               mLstFirstDetectedKptIndex;
+    TpLstKeyPointIndex                  mLstFirstDetectedKptIndex;
 };
     
 class KeyPointIDManager

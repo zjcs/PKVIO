@@ -6,6 +6,8 @@ namespace Type{
     
 const TpFrameID     INVALIDFRAMEID      = -1;     
 const TpKeyPointID  INVALIDKEYPOINTID   = -1;     
+const TpMapPointID  INVALIDMAPPOINTID   = -1;
+
 
 namespace TypeConvertor{
     

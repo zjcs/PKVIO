@@ -12,7 +12,6 @@ typedef enum{
     EnNonKeyFrame
 }EnKeyNonKeyFrame;
 
-typedef int     TpMapPointID;
     
 class BasicKeyNonKeyFrame
 {

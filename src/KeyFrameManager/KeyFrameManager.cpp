@@ -11,7 +11,7 @@ namespace KeyFrameManager
 
 void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
     const TpFrameID nCurFrameID = fFrame.FrameID();
-   Tools::Timer tTimer("KeyFrame");
+   Tools::Timer tTimer("KeyFrameManager Whole");
    //AutoLogTimer 
     
     //int nCountSumTrackKpts = mFrameKptIDMgr.sizeKeyPointsWithID();
@@ -22,10 +22,16 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
     
     EnSLAMState eSLAMState = updateTrackState(nCountSumTrackKpts, nCountKptsOnThisFrame);
     
+    collectFirstDetectedKeyPointOnNonKeyFrame(fFrame, mFrameMatchResult, mFrameKptIDMgr);
+    
     switch(eSLAMState){
-        case EnNeedKF: createOneKeyFrame(fFrame, mFrameMatchResult, mFrameKptIDMgr); break;
-        case EnLost: throw;
-        case EnNonKF: break;
+        case EnNeedKF: 
+            createOneKeyFrame(fFrame, mFrameMatchResult, mFrameKptIDMgr);
+            break;
+        case EnLost:
+            throw;
+        case EnNonKF: 
+            break;
         default: ;
     }
 }
@@ -53,49 +59,52 @@ EnSLAMState KeyFrameManager::updateTrackState(int nCountSumTrackKpts, int nCount
 void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManager::FrameMatchResult& mFrameMatchResult,
                         KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) 
 {
-    
-    //TpVecKeyPointID nVecFirstDetectedKptIDs; TpVecKeyPointIndex nVecFirstDetectedKptIndex;
-    //mFrameKptIDMgr.getFirstDetectedKptIDsAndIdexs(nVecFirstDetectedKptIDs, nVecFirstDetectedKptIndex);
-    //
-    //// State 1: initialized of this new kf. maybe small
-    //for(int nIdxKptID =0,nSzKptID=nVecFirstDetectedKptIDs.size();nIdxKptID<nSzKptID;++nIdxKptID){
-    //    
-    //    TpKeyPointID nKptID         = nVecFirstDetectedKptIDs[nIdxKptID];
-    //    TpMapPointID nMapPointID    = mMapPointIDManager.generateOneMapPointID(nKptID);
-    //    // all measurement to MapPointID, except the measurement from this frame which will be solved at bellow.
-    //}
-    
-    //// State 2: the kpt is created of non-kf, but tracked in this kf. maybe many.
+    Tools::Timer tTimer("createOneKeyFrame");
+    {
+        
+        Tools::Timer tTimer("createOneKeyFrame - set");
+        TpSetKeyPointID nSetFirstDetectedKptID(mLstFirstDetectedKptIDBeforKF.begin(), mLstFirstDetectedKptIDBeforKF.end());
+    }
+    TpSetKeyPointID nSetFirstDetectedKptID(mLstFirstDetectedKptIDBeforKF.begin(), mLstFirstDetectedKptIDBeforKF.end());
+     cout << "First Detected KptIDs: " << nSetFirstDetectedKptID.size() << endl;
+     mLstFirstDetectedKptIDBeforKF.clear();
+     
     TpVecKeyPointID nVecAllKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
-    //TpSetKeyPointID nSetFirstDetectedKptID (nVecFirstDetectedKptIDs.begin(), nVecFirstDetectedKptIDs.end());
-    for(auto Iter=nVecAllKptIDs.begin(), EndIter = nVecAllKptIDs.end();Iter!=EndIter;++Iter){
+    
+    {
+        Tools::Timer tTimer("createOneKeyFrame - generate mappoint");
+        for(auto Iter=nVecAllKptIDs.begin(), EndIter = nVecAllKptIDs.end();Iter!=EndIter;++Iter){
         TpKeyPointID nKptID = *Iter;
         
         // Filter 1: has been solved as above.
-        //if(nSetFirstDetectedKptID.count(nKptID))
-        //    continue;
+        if(!nSetFirstDetectedKptID.count(nKptID))
+            continue;
         
         // Just speed optimized.
         // TODO: Filter 2: has been co-vis by other nearest KFs.
         
         // Filter 3: 
-        if(mMapPointIDManager.isExistingMapPointID(nKptID))
-            continue;
+        //if(mMapPointIDManager.isExistingMapPointID(nKptID))
+        //    continue;
         
         
         TpMapPointID nMapPointID    = mMapPointIDManager.generateOneMapPointID(nKptID);
         
         // only this KF observe this kpt, other observe is non-KF.
         // so treat this new Kpts as other Kpt below, add their obersevation once.
+        }
     }
-    
-    // copy the measuremnt from this frame to MapPoint.
-    TpVecKeyPointIndex nVecAllKptIndex = mFrameKptIDMgr.getAllKeyPointIndexsWithID();
-    for(int nIdxKptID =0,nSzKptID=nVecAllKptIDs.size();nIdxKptID<nSzKptID;++nIdxKptID){
-        TpKeyPointID nKptID         = nVecAllKptIDs[nIdxKptID];   
-        
-        TpMapPoint& mMapPoint = mMapPointIDManager.MapPointByKeyPointID(nKptID);
-        mMapPoint.addMeasurement(fFrame.FrameIndex(), nVecAllKptIndex[nIdxKptID]);
+   
+    {
+        Tools::Timer tTimer("createOneKeyFrame - add measuremnt");
+        // copy the measuremnt from this frame to MapPoint.
+        TpVecKeyPointIndex nVecAllKptIndex = mFrameKptIDMgr.getAllKeyPointIndexsWithID();
+        for(int nIdxKptID =0,nSzKptID=nVecAllKptIDs.size();nIdxKptID<nSzKptID;++nIdxKptID){
+            TpKeyPointID nKptID         = nVecAllKptIDs[nIdxKptID];   
+            
+            TpMapPoint& mMapPoint = mMapPointIDManager.MapPointByKeyPointID(nKptID);
+            mMapPoint.addMeasurement(fFrame.FrameIndex(), nVecAllKptIndex[nIdxKptID]);
+        }
     }
     
     // 
@@ -103,6 +112,23 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
     generateOneKeyFrame(fFrame);
     
     
+}
+
+
+void KeyFrameManager::collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) 
+{
+    Tools::Timer tTimer("collectFirstDetectedKeyPointOnNonKeyFrame");
+    TpVecKeyPointID nLstFirstDetectedKptID = mFrameKptIDMgr.getFirstDetectedKptIDs();
+    mLstFirstDetectedKptIDBeforKF.insert(mLstFirstDetectedKptIDBeforKF.end(), nLstFirstDetectedKptID.begin(),nLstFirstDetectedKptID.end());
+}
+
+
+int KeyFrameManager::countTrackKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
+    Tools::Timer tTimer("countTrackKptIDsWithMapPointID");
+    TpVecKeyPointID nKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
+    return std::count_if(nKptIDs.begin(),nKptIDs.end(),[&](const TpKeyPointID nKptID) {
+        return mMapPointIDManager.isExistingMapPointID(nKptID);
+    });
 }
 
 }
