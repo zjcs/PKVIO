@@ -5,6 +5,7 @@
 #include "../DatasetManager/DatasetInterface.h"
 #include "../KeyPointManager/KeyPointManager.h"
 #include "../CoVisManager/CoVisManager.h"
+#include "../KeyFrameManager/KeyFrameManager.h"
 
 using namespace std;
 
@@ -26,11 +27,13 @@ protected:
     void doexec(void);
     void exit(void);
 private:
+    void debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
 private:
     TpFuncDoExec mPtrFuncDoExec;
     DatasetManager::DatasetInterfacePtr mPtrDataset;
     KeyPointManager::KeyPointManager    mKeyPointMgr;
     CoVisManager::CoVisManager          mCoVisMgr;
+    KeyFrameManager::PtrKeyFrameManager mPtrKeyFrameMgr;
 };
 
 }

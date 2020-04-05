@@ -6,8 +6,8 @@ namespace DatasetManager
 {
     
 DatasetOfflineImp::DatasetOfflineImp(const std::string& sDatasetPath)
-: mStrDatasetPath(sDatasetPath)
-, nIndexNextToRead(0)
+: nIndexNextToRead(0)
+, mStrDatasetPath(sDatasetPath)
 {
     
 }

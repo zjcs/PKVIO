@@ -2,6 +2,7 @@
 #define __FRAME_H__
 
 #include <map>
+#include <set>
 
 using namespace std;
 
@@ -9,18 +10,26 @@ namespace PKVIO
 {
 namespace Type
 {
+
+typedef double  TpTimeStamp;
     
 typedef int     TpFrameID;
 typedef int     TpFrameIndex;
-typedef double  TpTimeStamp;
+typedef int     TpKeyFrameID;
 
 typedef int     TpKeyPointID;
 typedef int     TpKeyPointIndex;
+
+typedef vector<TpKeyPointID>    TpVecKeyPointID;
+typedef set<TpKeyPointID>       TpSetKeyPointID;
+typedef vector<TpKeyPointIndex> TpVecKeyPointIndex;
+typedef vector<TpKeyFrameID>    TpVecKeyFrameID;
 
 extern const TpFrameID      INVALIDFRAMEID;     
 extern const TpKeyPointID   INVALIDKEYPOINTID;     
 inline bool                 isInvalideFrameID(const TpFrameID nFrameID){return nFrameID==INVALIDFRAMEID;}
 inline bool                 isInvalideKeyPointID(const TpKeyPointID nKptID){return nKptID==INVALIDKEYPOINTID;}
+inline bool                 isValideKeyPointID(const TpKeyPointID nKptID){return nKptID!=INVALIDKEYPOINTID;}
 
 typedef vector<TpFrameID>               TpVecFrameID;
 typedef map<TpFrameID, TpFrameIndex>    TpMapFrameID2FrameIndex;

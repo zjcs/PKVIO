@@ -1,16 +1,17 @@
 #ifndef __TYPE__
 #define __TYPE__
 #include <string>
-#include <opencv/cv.h>
 #include <queue>
 #include <list>
 #include <functional>
 #include <map>
+#include <opencv/cv.h>
 #include "Frame.h"
 #include "IDGenerator.h"
 #include "GraphNode.h"
 #include "FixLengthQueue.h"
 #include "DataHistoryTemplate.h"
+#include "KeyFrameNonKeyFrame.h"
 
 using namespace std;
 
@@ -29,9 +30,26 @@ typedef vector<cv::DMatch>              TpVecMatchResult;
 typedef pair<int,int>                   TpMatchPair;
 typedef vector<TpMatchPair>             TpVecMatchPairs;
 
-TpMatchPair                             cvtMatchToMatchPair(const cv::DMatch& m);
 
+typedef enum{
+    EnNonKF,
+    EnNeedKF,
+    EnLost,
+    EnLoop,
+    EnReloc
+}EnSLAMState;
+
+
+namespace TypeConvertor
+{
+    
 string                                  cvtTimeStampToString(const TpTimeStamp& t);
+TpMatchPair                             cvtMatchToMatchPair(const cv::DMatch & m);
+
+}
+
+using namespace TypeConvertor;
+
 
 }
 

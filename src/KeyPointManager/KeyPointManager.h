@@ -64,6 +64,10 @@ public:
     TpOneFrameKptDescriptor&    getDescriptor(const TpFrameID nFrmID) { return mFrameKptsDescriptorHistoryRecord.get(nFrmID); }
     
     inline FrameMatchResult&    getFrameMatchResult(void){return mFrameMatchResult;}
+    
+    inline StereoFrameHistory&  getStereoFrameHistory(void){return mFrameHistoryRecord;}
+    
+    inline FrameKptsDescriptorHistory& getFrameKptsDescriptorHistory(void){return mFrameKptsDescriptorHistoryRecord;}
 protected:
     void                        track(const Frame& fCurFrame, const TpOneFrameKptDescriptor& fCurFrameKptDescriptor);
     

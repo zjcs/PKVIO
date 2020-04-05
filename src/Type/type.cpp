@@ -7,6 +7,8 @@ namespace Type{
 const TpFrameID     INVALIDFRAMEID      = -1;     
 const TpKeyPointID  INVALIDKEYPOINTID   = -1;     
 
+namespace TypeConvertor{
+    
 string cvtTimeStampToString(const TpTimeStamp& t){
     char a[100];
     sprintf(a,"%19.0f",t);
@@ -15,6 +17,8 @@ string cvtTimeStampToString(const TpTimeStamp& t){
     
 TpMatchPair cvtMatchToMatchPair(const cv::DMatch& m){
     return std::make_pair(m.queryIdx, m.trainIdx);
+}
+
 }
 
 

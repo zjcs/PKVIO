@@ -22,17 +22,10 @@ void CoVisManager::solve (const Type::Frame& fFrame, const KeyPointManager::Fram
     // Tools::Timer tTimer("CoVis Whole");
     
     const TpFrameID nCurFrameID = fFrame.FrameID();
-    //cout << "Init Current Frame ID memory ..." << endl;
-    mKeyPointIDManager.add(fFrame.getFrameIndex(), nCurFrameID, mFrameMatchResult.getCountKptsOnThisFrame());
-    //cout << "Init Current Frame ID memory Finish." << endl;
+    int nCountKptsOnThisFrame = mFrameMatchResult.getCountKptsOnThisFrame();
+    mKeyPointIDManager.addOneFrameIDManager(fFrame.getFrameIndex(), nCurFrameID, nCountKptsOnThisFrame);
     
-    int nSzMatch = mFrameMatchResult.size();
-    if(nSzMatch<1 || (nSzMatch == 1 && mFrameMatchResult.isExistInnerFrameDescriptorMatchResult()) )
-        return;
-    
-    //cout << "Init Current Frame ID ..." << endl;
-    copyIDToCurFrameOrGenerateIDForBothMatchFrames(mFrameMatchResult);
-    //cout << "Init Current Frame ID Finish." << endl;
+    int nCountSumTrackKpts = copyIDToCurFrameOrGenerateIDForBothMatchFrames(mFrameMatchResult);
     
     updateCoVisGraph();
 }
@@ -53,12 +46,19 @@ Type::TpMapFrameID2FrameIndex CoVisManager::initFrameID2FrameIndexOfMatchResult(
     return mMapFrameID2FrameIndex;
 }
 
-void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult)
+int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult)
 {
+    int nCountSumTrackKpts = 0;
+    
+    int nSzMatch = mFrameMatchResult.size();
+    if(nSzMatch<1 || (nSzMatch == 1 && mFrameMatchResult.isExistInnerFrameDescriptorMatchResult()) )
+        return nCountSumTrackKpts;
+    
     // about 0.05ms for one Co-Vis Frame Pair.
     //Tools::Timer CoVisCopyIDTimer("CoVis: copyID");
     
     TpMapFrameID2FrameIndex mMapFrameID2FrameIndex = initFrameID2FrameIndexOfMatchResult(mFrameMatchResult);
+    
     
     //TODO: if stereo, two keypoints in left and right should have a ID when they satisfy the rule below.
     int nSzOuterMatch = mFrameMatchResult.sizeOuterFrameDescriptorMatchResult();
@@ -75,8 +75,8 @@ void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPoint
         
         int nKptIdxInPrev, nKptIdxInCur;
         int nSzKptsMatch                    = mPrevAndCurFrameMatchResult.getCountMatchKpts();
-        KeyPointManager::TpOneFrameIDManager mPrevFrameIDMgr = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nPrevFrameIndex);
-        KeyPointManager::TpOneFrameIDManager mCurFrameIDMgr  = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nCurFrameIndex);
+        KeyPointManager::TpOneFrameIDManager& mPrevFrameIDMgr = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nPrevFrameIndex);
+        KeyPointManager::TpOneFrameIDManager& mCurFrameIDMgr  = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nCurFrameIndex);
         
         int nCountCoVisID = 0;
         
@@ -85,9 +85,11 @@ void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPoint
             mPrevAndCurFrameMatchResult.getMatchKptIndex((const int)nIdxKptMatch, nKptIdxInPrev, nKptIdxInCur);
             TpKeyPointID& mKptIDInPrev = mPrevFrameIDMgr.KeyPointID(nKptIdxInPrev);
             
+            bool bNewKptID = false;
             if(Type::isInvalideKeyPointID(mKptIDInPrev)){
                 //TODO : should have enough parallax to be able triangule a new 3d point, then general ID.
                 mPrevFrameIDMgr.InitializeKptID(mKptIDInPrev, mKeyPointIDManager.GenerateKeyPointID());
+                bNewKptID = true;
             }
             
             if(!Type::isInvalideKeyPointID(mKptIDInPrev)){
@@ -99,6 +101,9 @@ void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPoint
                     throw;
                 }
                 mCurFrameIDMgr.InitializeKptID(mKptIDInCur, mKptIDInPrev);
+                if(bNewKptID){
+                    mCurFrameIDMgr.setKptIDIsFirstDetectedDueToCurrentFrame(nKptIdxInCur, mKptIDInCur);
+                }
                 ++nCountCoVisID;
             }
         }
@@ -106,7 +111,11 @@ void CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPoint
         if(nCountCoVisID>0){
             nVecCoVisFramePairAndWeight.push_back(CoVisFramePairAndWeight(nPrevFrameID, nCurFrameID, nCountCoVisID));
         }
+        nCountSumTrackKpts += nCountCoVisID;
     }
+    
+    
+    return nCountSumTrackKpts;
 }
 
 

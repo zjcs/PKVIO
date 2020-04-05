@@ -9,7 +9,7 @@ ADD_LIBRARY(System ${DIR_SRCS})
 # 
 include_directories(../Type/)
 include_directories(../DatasetManager/)
-TARGET_LINK_LIBRARIES(System Type DatasetManager CoVisManager Tools)
+TARGET_LINK_LIBRARIES(System Type DatasetManager CoVisManager Tools KeyFrameManager)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

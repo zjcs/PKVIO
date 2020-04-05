@@ -10,6 +10,9 @@ namespace PKVIO{
         using namespace Draw;
         using namespace Compare;
         using namespace Timer;
+        
+        void getScreenWindowSize(int& nWidth, int& nHeight);
+        inline cv::Size getScreenWindowSize(void){ int nWidth,nHeight; Tools::getScreenWindowSize(nWidth, nHeight); return cv::Size(nWidth,nHeight); };
     }
 }
 

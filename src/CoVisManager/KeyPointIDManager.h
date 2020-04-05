@@ -15,7 +15,7 @@ namespace KeyPointManager
 class TpOneFrameIDManager
 {
 public:
-    TpOneFrameIDManager(int nCountKpts = 0):mVecKeyPointIDs(nCountKpts, -1){}
+    TpOneFrameIDManager(int nCountKpts = 0):mVecKeyPointIDs(nCountKpts, INVALIDKEYPOINTID){}
     TpOneFrameIDManager(const TpOneFrameIDManager& cp):mVecKeyPointIDs(cp.mVecKeyPointIDs){}
     
     inline TpKeyPointID&                KeyPointID(const TpKeyPointIndex nKeyPointIndexInThisFrame){ return mVecKeyPointIDs[nKeyPointIndexInThisFrame]; }
@@ -23,8 +23,58 @@ public:
     
     inline void                         InitializeKptID(TpKeyPointID& nNewKptIDToThisID, TpKeyPointID nNewKptID){ nNewKptIDToThisID = nNewKptID; }
     inline void                         InitializeKptIDByKptIdx(TpKeyPointIndex& nNewKptIDToThisIndex, TpKeyPointID nNewKptID){ KeyPointID(nNewKptIDToThisIndex) = nNewKptID; }
+    
+    inline void                         setKptIDIsFirstDetectedDueToCurrentFrame(TpKeyPointIndex& nKptIndexInThisFrame, TpKeyPointID nKptID){
+        mLstFirstDetectedKptIndex.push_back(nKptIndexInThisFrame);
+    }
+    
+    inline TpVecKeyPointID              getFirstDetectedKptIDs(void){
+        TpVecKeyPointID nVecKptID;
+        nVecKptID.reserve(sizeFirstKptIDsDetected());
+        for(auto Iter = mLstFirstDetectedKptIndex.begin(),EndIter = mLstFirstDetectedKptIndex.end();Iter!=EndIter;++Iter){
+            nVecKptID.push_back(mVecKeyPointIDs[*Iter]);
+        }
+        return nVecKptID;
+    }
+    inline void                         getFirstDetectedKptIDsAndIdexs(TpVecKeyPointID& nVecKptIDs, TpVecKeyPointIndex& nVecKptIndexs){
+        // copy Index;
+        nVecKptIndexs = TpVecKeyPointIndex(mLstFirstDetectedKptIndex.begin(), mLstFirstDetectedKptIndex.end());
+        // copy ID;
+        nVecKptIDs = getFirstDetectedKptIDs();
+    }
+    
+    inline int                          sizeKeyPoints(void){return mVecKeyPointIDs.size();}
+    inline int                          sizeKeyPointsWithID(void){ 
+        return sizeKeyPoints() - std::count(mVecKeyPointIDs.begin(),mVecKeyPointIDs.end(),INVALIDKEYPOINTID); }
+    inline int                          sizeFirstKptIDsDetected(void){return mLstFirstDetectedKptIndex.size();}
+    
+    TpVecKeyPointID                     getAllKeyPointIDs(void){
+        int nSzKptIDs = sizeKeyPointsWithID();
+        TpVecKeyPointID nVecKptIDs;
+        nVecKptIDs.resize(nSzKptIDs);
+        std::copy_if(mVecKeyPointIDs.begin(),mVecKeyPointIDs.end(), nVecKptIDs.begin(),Type::isValideKeyPointID);
+        return nVecKptIDs;
+    }
+    TpVecKeyPointIndex                   getAllKeyPointIndexsWithID(void){
+        int nSzKptIDs = sizeKeyPointsWithID();
+        TpVecKeyPointIndex nVecKptIndexs;
+        nVecKptIndexs.reserve(nSzKptIDs);
+        for(int nKptIdx = 0,nSzKpts = (int)mVecKeyPointIDs.size();nKptIdx!=nSzKpts;++nKptIdx){
+            if(Type::isValideKeyPointID(mVecKeyPointIDs[nKptIdx])){
+                nVecKptIndexs.push_back(nKptIdx);
+            }
+        }
+        return nVecKptIndexs;
+    }
+    
+    string                              str(void){
+        stringstream sStrStream;
+        sStrStream << "L+R Kpts | KptIDs | NewKptIDs - "<<   sizeKeyPoints() << " | " << sizeKeyPointsWithID() << " | " << sizeFirstKptIDsDetected();
+        return sStrStream.str();
+    }
 private:
-    vector<TpKeyPointID>                mVecKeyPointIDs;
+    TpVecKeyPointID                     mVecKeyPointIDs;
+    list<TpKeyPointIndex>               mLstFirstDetectedKptIndex;
 };
     
 class KeyPointIDManager
@@ -51,28 +101,16 @@ public:
         return FindIter->second;
     }
     
-    inline void                         add(const TpFrameIndex nFrameIndex, const TpFrameID nFrameID, const int nCountKpts){
-        
-        // allocate memory.
-        mSetFrameIndex2FrameID.resize(nFrameIndex+1);
-        mSetFrameIndex2OneFrameIDManager.resize(nFrameIndex+1);
-        
-        // initialize data.
-        mSetFrameID2FrameIndex[nFrameID] = nFrameIndex;
-        mSetFrameIndex2FrameID[nFrameIndex] = nFrameID;
-        mSetFrameIndex2OneFrameIDManager[nFrameIndex] = TpOneFrameIDManager(nCountKpts);
-    }
-    
-    
+    void                                addOneFrameIDManager(const TpFrameIndex nFrameIndex, const TpFrameID nFrameID, const int nCountKpts);
     
     inline TpKeyPointID                 GenerateKeyPointID(void){ return mKeyPointIDGeneration.create();}
 private:
-    Type::IDGenerator<TpKeyPointID> mKeyPointIDGeneration;
+    Type::IDGenerator<TpKeyPointID>     mKeyPointIDGeneration;
     
-    TpMapFrameID2FrameIndex mSetFrameID2FrameIndex;
-    vector<TpFrameID> mSetFrameIndex2FrameID;
+    TpMapFrameID2FrameIndex             mSetFrameID2FrameIndex;
+    vector<TpFrameID>                   mSetFrameIndex2FrameID;
     
-    vector<TpOneFrameIDManager> mSetFrameIndex2OneFrameIDManager;
+    vector<TpOneFrameIDManager>         mSetFrameIndex2OneFrameIDManager;
     
     
 };

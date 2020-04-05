@@ -12,6 +12,7 @@ void System::exec(void) {
     initialize();
     doexec();
     exit();
+    
 }
 
 void System::initialize(void) {
@@ -20,6 +21,8 @@ void System::initialize(void) {
     
     mPtrDataset = std::make_shared<DatasetEuRoc>(sDatasetPath);
     mPtrDataset->initialize();
+    
+    mPtrKeyFrameMgr = std::make_shared<KeyFrameManager::KeyFrameManager>();
     
     cout << "PkVio System intialization Finish." << endl;
 }
@@ -67,6 +70,17 @@ void System::runVIO() {
             mCoVisMgr.solve(mCurFrame, mFrameMatchResult);
             //cout << "CoVis Graph Finish." <<endl;
             
+            KeyPointManager::TpOneFrameIDManager& mOneFrameIDMgr = mCoVisMgr.getFrameKptIDMgr(mCurFrame.FrameID());
+            mPtrKeyFrameMgr->solve(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
+            
+            debugCountTrackingKptIDWihtMapPointID(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
+            
+            if(mPtrKeyFrameMgr->isKeyFrame(mCurFrame.FrameID())){
+                // non-kf observe should insert to the mappoint.
+            }else{
+                
+            }
+            
             cv::Mat& mImgToShow = mCurFrame.getImage();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
                 KeyPointManager::TpOneFrameKptDescriptor& CurFrmKptsDescriptor = mKeyPointMgr.getDescriptor(mCurFrame.FrameID());
@@ -81,6 +95,36 @@ void System::runVIO() {
     
     mPtrFuncDoExec = FuncDorunVIO;
     exec();
+}
+
+
+void System::debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
+    int nCurCountKptIDsWithMapPoint = mPtrKeyFrameMgr->countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
+    static int nPrevCountKptIDsWithMapPoint = 0;
+    
+    if(mPtrKeyFrameMgr->isKeyFrame(fFrame.FrameID())) {
+        
+    } else {
+        if(nCurCountKptIDsWithMapPoint>nPrevCountKptIDsWithMapPoint) {
+            
+            cout << "**** Error: Match Point number should decreas... Prev|Cur - " << nPrevCountKptIDsWithMapPoint <<" | " << nCurCountKptIDsWithMapPoint << endl;
+            
+            
+            // draw the match and debug.
+            cv::Mat mFrameImgCurLeft = fFrame.getImage();
+            auto& mMatchREsult = mFrameMatchResult.getOuterFrameDescriptorMatchResult(0);
+            KeyPointManager::StereoFrameHistory& nFrameHistory = mKeyPointMgr.getStereoFrameHistory();
+            assert(fFrame.FrameID() == mMatchREsult.getFrameIDRight());
+            if(nFrameHistory.isExisting(mMatchREsult.getFrameIDLeft())){
+                Frame& fPrevFrame = nFrameHistory.get(mMatchREsult.getFrameIDLeft());
+                assert(fPrevFrame.FrameID() == mMatchREsult.getFrameIDLeft());
+                cv::Mat mFrameImgPrevLeft = fPrevFrame.getImage();
+                //mKeyPointMgr.getDescriptor();
+                //mMatchREsult.getMatch();
+            }
+        }
+    }
+    nPrevCountKptIDsWithMapPoint = nCurCountKptIDsWithMapPoint;
 }
 
 }

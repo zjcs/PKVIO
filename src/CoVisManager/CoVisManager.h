@@ -22,12 +22,21 @@ public:
     
     TpVecCoVisFrameIDs          getCoVisFrameIDs(const TpFrameID nFrameIDQuery) const;
     
+    inline KeyPointManager::TpOneFrameIDManager& 
+                                getCurrentFrameKptIDMgr(void){
+                                    throw;
+                                    //TODO: how to get current frame ID.
+                                }
+    inline KeyPointManager::TpOneFrameIDManager& 
+                                getFrameKptIDMgr(const TpFrameID& nFrameID){ return mKeyPointIDManager.OneFrameIDManager(nFrameID); }
 protected:
     TpMapFrameID2FrameIndex     initFrameID2FrameIndexOfMatchResult(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     
-    void                        copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
+    int                         copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     
     void                        updateCoVisGraph(void);
+    
+
 private:
     KeyPointManager::KeyPointIDManager mKeyPointIDManager;
     TpPtrCoVisGraph                    mPtrCoVisGraph;
