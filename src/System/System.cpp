@@ -81,7 +81,7 @@ void System::runVIO() {
                 
             }
             
-            cv::Mat& mImgToShow = mCurFrame.getImage();
+            cv::Mat& mImgToShow = mCurFrame.Image();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
                 KeyPointManager::TpOneFrameKptDescriptor& CurFrmKptsDescriptor = mKeyPointMgr.getDescriptor(mCurFrame.FrameID());
                 mImgToShow = Tools::drawKeyPoints(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft);
@@ -103,25 +103,26 @@ void System::debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const Ke
     static int nPrevCountKptIDsWithMapPoint = 0;
     
     if(mPtrKeyFrameMgr->isKeyFrame(fFrame.FrameID())) {
-        
+        // do nothing.
     } else {
         if(nCurCountKptIDsWithMapPoint>nPrevCountKptIDsWithMapPoint) {
             
             cout << "**** Error: Match Point number should decreas... Prev|Cur - " << nPrevCountKptIDsWithMapPoint <<" | " << nCurCountKptIDsWithMapPoint << endl;
             
+            TpFrameID nFrameIDPre2 = fFrame.FrameID()-2, nFrameIDPrev = fFrame.FrameID()-1, nFrameIDCur = fFrame.FrameID();
             
-            // draw the match and debug.
-            cv::Mat mFrameImgCurLeft = fFrame.getImage();
-            auto& mMatchREsult = mFrameMatchResult.getOuterFrameDescriptorMatchResult(0);
-            KeyPointManager::StereoFrameHistory& nFrameHistory = mKeyPointMgr.getStereoFrameHistory();
-            assert(fFrame.FrameID() == mMatchREsult.getFrameIDRight());
-            if(nFrameHistory.isExisting(mMatchREsult.getFrameIDLeft())){
-                Frame& fPrevFrame = nFrameHistory.get(mMatchREsult.getFrameIDLeft());
-                assert(fPrevFrame.FrameID() == mMatchREsult.getFrameIDLeft());
-                cv::Mat mFrameImgPrevLeft = fPrevFrame.getImage();
-                //mKeyPointMgr.getDescriptor();
-                //mMatchREsult.getMatch();
-            }
+            KeyPointManager::TpOneFrameKptDescriptor nFrameKptDescriptorPre2Prev;
+            KeyPointManager::TpDescriptorMatchResult nDescriptorsMatchResultPre2Prev;
+            mKeyPointMgr.getTrackingKptDescriptorMatchResult(nFrameIDPre2, nFrameIDPrev, nFrameKptDescriptorPre2Prev, nDescriptorsMatchResultPre2Prev);
+            
+            KeyPointManager::TpOneFrameKptDescriptor nFrameKptDescriptorPrevCur;
+            KeyPointManager::TpDescriptorMatchResult nDescriptorsMatchResultPrevCur;
+            mKeyPointMgr.getTrackingKptDescriptorMatchResult(nFrameIDPrev, nFrameIDCur, nFrameKptDescriptorPrevCur, nDescriptorsMatchResultPrevCur);
+            
+            cv::Mat mPr2PrevMatch = mKeyPointMgr.showMatchResult(nFrameIDPre2, nFrameIDPrev , true);
+            cv::Mat mPrevCurMatch = mKeyPointMgr.showMatchResult(nFrameIDPrev, nFrameIDCur, true);
+            cv::waitKey();
+            
         }
     }
     nPrevCountKptIDsWithMapPoint = nCurCountKptIDsWithMapPoint;

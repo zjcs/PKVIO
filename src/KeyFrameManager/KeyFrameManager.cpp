@@ -1,4 +1,5 @@
 #include "KeyFrameManager.h"
+#include "../Tools/Tools.h"
 
 namespace PKVIO
 {
@@ -10,7 +11,8 @@ namespace KeyFrameManager
 
 void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
     const TpFrameID nCurFrameID = fFrame.FrameID();
-    
+   Tools::Timer tTimer("KeyFrame");
+   //AutoLogTimer 
     
     //int nCountSumTrackKpts = mFrameKptIDMgr.sizeKeyPointsWithID();
     int nCountSumTrackKpts = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);

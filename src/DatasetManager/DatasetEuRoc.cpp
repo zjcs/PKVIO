@@ -26,7 +26,7 @@ void DatasetEuRoc::initialize(void) {
 Frame* DatasetEuRoc::load(const int nIndexToRead) {
     //Image
     StereoFrame* pStereoIMUFrame = new StereoFrame;
-    getImage(nIndexToRead, pStereoIMUFrame->getImageLeft(), pStereoIMUFrame->getImageRight());
+    getImage(nIndexToRead, pStereoIMUFrame->ImageLeft(), pStereoIMUFrame->ImageRight());
     //IMU
     getIMU();
     // Generate FrameID;

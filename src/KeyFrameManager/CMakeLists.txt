@@ -7,5 +7,5 @@ ADD_LIBRARY(KeyFrameManager ${DIR_SRCS})
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 # target_link_libraries(KeyFrameManager, ${OpenCV_LIBS})
-target_link_libraries(KeyFrameManager Type)
+target_link_libraries(KeyFrameManager Type Tools)
 

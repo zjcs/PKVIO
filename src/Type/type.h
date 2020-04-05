@@ -26,6 +26,7 @@ using namespace PKVIO::IDGenerator;
 typedef     std::vector<cv::KeyPoint>   TpVecKeyPoints;
 typedef     cv::Mat                     TpVecDescriptor;
 
+typedef cv::DMatch                      TpOneMatchResult;
 typedef vector<cv::DMatch>              TpVecMatchResult;
 typedef pair<int,int>                   TpMatchPair;
 typedef vector<TpMatchPair>             TpVecMatchPairs;
@@ -43,6 +44,12 @@ typedef enum{
 namespace TypeConvertor
 {
     
+template<typename T> string             toString(T& t)
+{
+    stringstream sStrStream;
+    sStrStream<<t;
+    return sStrStream.str();
+}
 string                                  cvtTimeStampToString(const TpTimeStamp& t);
 TpMatchPair                             cvtMatchToMatchPair(const cv::DMatch & m);
 

@@ -19,11 +19,13 @@ const TpVecMatchPairs TpDescriptorMatchResult::getMatchPairs() const {
 }
 
 TpDescriptorMatchResult DescriptorMatch::match(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
+    TpDescriptorMatchResult nMatResult;
     switch(mEnMatchMethod){
-        case EnKnnWholeImage: return matchByKnn(fKptsDesc);
-        case EnBrutForceInWindow: return matchByBrutForceInWindow(fKptsDesc);
+        case EnKnnWholeImage: nMatResult = matchByKnn(fKptsDesc); break;
+        case EnBrutForceInWindow: nMatResult = matchByBrutForceInWindow(fKptsDesc); break;
         default: throw;
     }
+    return removeDuplicatedMatch(fKptsDesc, nMatResult);
 }
 
 TpDescriptorMatchResult DescriptorMatch::matchByKnn(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
@@ -86,15 +88,7 @@ TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::K
                 auto mKptLeftDesc = (cv::Mat)fKptsDesc.mDescriptorsLeft.row(nKptIdxLeft);
                 //cout << mKptLeftDesc.rows << "-" << mKptLeftDesc.cols << "-" << mKptLeftDesc.channels() << "-" << mKptLeftDesc.type() << endl;
                 //cout << mKptRightDesc.rows << "-" << mKptRightDesc.cols << "-" << mKptRightDesc.channels() << "-" << mKptRightDesc.type() << endl;
-                auto fDistance = 0;
-                for(int nIdxCol=0,nSzCols=mKptLeftDesc.cols;nIdxCol<nSzCols;++nIdxCol){
-                    auto vLeft = mKptLeftDesc.at<uchar>(0,nIdxCol);
-                    auto vRight = mKptRightDesc.at<uchar>(0,nIdxCol);
-                    auto e = vLeft -vRight;
-                    fDistance += e*e;
-                }
-                fDistance = std::sqrt(fDistance);
-                //cout << fDistance<<endl;
+                auto fDistance = distance(mKptLeftDesc,mKptRightDesc);
                 if(fDistance<mMinDistance){
                     nMinKptIdxLeft = nKptIdxLeft;
                     mMin2ndDistance = mMinDistance;
@@ -108,6 +102,7 @@ TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::K
             mBestVecMatchResult.push_back(cv::DMatch(nMinKptIdxLeft,nKptIdxRight,mMinDistance));
         }
     }
+    
     // Best|Init: 230|500, almost about 50%, and all is right match. even with a less stric filter: 1st < 0.95*2nd;
     return TpDescriptorMatchResult(fKptsDesc.FrameIDLeft(), fKptsDesc.FrameIDRight(), mBestVecMatchResult, nCountKptsLeft, nCountKptsRight);
 }
@@ -119,8 +114,101 @@ cv::Mat DescriptorMatch::showMatchResult(const Type::Frame& fFrame, const PKVIO:
     // cout << "Match: Best|Init - " << nBestMatch <<"|" <<nInitMatch<<endl;
     
     const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(fFrame);
-    cv::Mat mDrawMatchResult = Tools::drawMatch(fStereoFrame.ImageLeft(), fKptsDesc.mKeyPointsLeft, fStereoFrame.ImageRight(), fKptsDesc.mKeyPointsRight, mBestVecMatchResult.get(), false , sWindowTitle);
+    cv::Mat mDrawMatchResult = Tools::drawMatch(fStereoFrame.getImageLeft(), fKptsDesc.mKeyPointsLeft, fStereoFrame.getImageRight(), fKptsDesc.mKeyPointsRight, mBestVecMatchResult.get(), false , sWindowTitle);
+    
+    //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
+    debugDuplicatedMatch(fFrame, fKptsDesc, mBestVecMatchResult);
+    
     return mDrawMatchResult;
+}
+
+
+bool DescriptorMatch::debugDuplicatedMatch(const Type::Frame& fFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult) 
+{
+    std::set<TpKeyPointIndex> nUniqueKptIdxLeft, nDuplicatedKptIdxLeft;
+    for(int nIdxMatch = 0, nSzMatch = mBestVecMatchResult.getCountMatchKpts();nIdxMatch<nSzMatch;++nIdxMatch ){
+        const auto& nMatch = mBestVecMatchResult.get()[nIdxMatch];
+        TpKeyPointIndex nKptIdxLeft = nMatch.queryIdx;
+        if(nUniqueKptIdxLeft.count(nKptIdxLeft)){
+            //cout << "**** Error: Duplicated Match KptIdx Left: " <<nKptIdxLeft << "|" << nMatch.trainIdx<<"|"<<nMatch.distance<< m endl;
+            nDuplicatedKptIdxLeft.insert(nKptIdxLeft);
+        }
+        nUniqueKptIdxLeft.insert(nKptIdxLeft);
+    }
+    
+    if(!nDuplicatedKptIdxLeft.size())
+        return true;
+    
+    TpVecMatchResult nVecMatchResult; nVecMatchResult.reserve(nDuplicatedKptIdxLeft.size());
+    for(int nIdxMatch = 0, nSzMatch = mBestVecMatchResult.getCountMatchKpts();nIdxMatch<nSzMatch;++nIdxMatch ){
+        const auto& nMatch = mBestVecMatchResult.get()[nIdxMatch];
+        TpKeyPointIndex nKptIdxLeft = nMatch.queryIdx;
+        if(nDuplicatedKptIdxLeft.count(nKptIdxLeft)) {
+            nVecMatchResult.push_back(nMatch);
+        }
+    }
+    
+    cout << "Duplicated:" << fKptsDesc.FrameIDLeft() << " | " << fKptsDesc.FrameIDRight() << endl;
+    
+    const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(fFrame);
+    cv::Mat mDrawMatchResult = Tools::drawMatch(fStereoFrame.getImageLeft(), fKptsDesc.mKeyPointsLeft, fStereoFrame.getImageRight(), fKptsDesc.mKeyPointsRight, mBestVecMatchResult.get(), false , "Duplicated");
+     cv::waitKey();
+    return false;
+}
+
+
+TpDescriptorMatchResult DescriptorMatch::removeDuplicatedMatch(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& mBestVecMatchResult) 
+{
+    std::map<int, pair<int, float>> nMapDuplicatedKptIdx2MatchIdxAndDescDistance;
+    std::set<TpKeyPointIndex> nUniqueKptIdxLeft, nDuplicatedKptIdxLeft; int nSzDuplicated = 0;
+    for(int nIdxMatch = 0, nSzMatch = mBestVecMatchResult.getCountMatchKpts();nIdxMatch<nSzMatch;++nIdxMatch ){
+        const auto& nMatch = mBestVecMatchResult.get()[nIdxMatch];
+        TpKeyPointIndex nKptIdxLeft = nMatch.queryIdx;
+        if(nUniqueKptIdxLeft.count(nKptIdxLeft)){
+            //cout << "**** Error: Duplicated Match KptIdx Left: " <<nKptIdxLeft << "|" << nMatch.trainIdx<<"|"<<nMatch.distance<< m endl;
+            nDuplicatedKptIdxLeft.insert(nKptIdxLeft);
+            ++nSzDuplicated;
+        }
+        nUniqueKptIdxLeft.insert(nKptIdxLeft);
+    }
+    nSzDuplicated+=nDuplicatedKptIdxLeft.size();
+    
+    if(!nDuplicatedKptIdxLeft.size())
+        return mBestVecMatchResult;
+    
+    TpVecMatchResult nVecMatchResult; nVecMatchResult.resize(mBestVecMatchResult.getCountMatchKpts()-nSzDuplicated);
+    const auto& nOldVecMatchResult = mBestVecMatchResult.get();
+    std::copy_if(nOldVecMatchResult.cbegin(),nOldVecMatchResult.cend(),nVecMatchResult.begin(), [&](const TpOneMatchResult& r){
+        return !nDuplicatedKptIdxLeft.count(r.queryIdx);
+    });
+    mBestVecMatchResult = TpDescriptorMatchResult(mBestVecMatchResult, nVecMatchResult);
+    return mBestVecMatchResult;
+    
+    /*
+    TpVecMatchResult nVecMatchResult; nVecMatchResult.reserve(nDuplicatedKptIdxLeft.size());
+    for(int nIdxMatch = 0, nSzMatch = mBestVecMatchResult.getCountMatchKpts();nIdxMatch<nSzMatch;++nIdxMatch ){
+        const auto& nMatch = mBestVecMatchResult.get()[nIdxMatch];
+        TpKeyPointIndex nKptIdxLeft = nMatch.queryIdx;
+        if(nDuplicatedKptIdxLeft.count(nKptIdxLeft)) {
+            nVecMatchResult.push_back(nMatch);
+        }
+    }
+    */
+ 
+}
+
+
+float DescriptorMatch::distance(const cv::Mat& nDescA, const cv::Mat& nDescB) {
+    auto fDistance = 0;
+    for(int nIdxCol=0,nSzCols=nDescA.cols;nIdxCol<nSzCols;++nIdxCol){
+        auto vLeft = nDescA.at<uchar>(0,nIdxCol);
+        auto vRight = nDescB.at<uchar>(0,nIdxCol);
+        auto e = vLeft -vRight;
+        fDistance += e*e;
+    }
+    fDistance = std::sqrt(fDistance);
+    //cout << fDistance<<endl;    
+    return fDistance;
 }
 
 }

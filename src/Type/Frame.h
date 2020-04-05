@@ -60,8 +60,8 @@ public:
     inline const TpFrameID&     FrameID(void)const { return mFrameID; }
     inline void                 initFrameID(const TpFrameID& nFrmID){ mFrameID = nFrmID; };
     inline void                 initFrameIndex(const TpFrameIndex& nFrmIndex){ mFrameIndex = nFrmIndex; };
-    inline cv::Mat&             getImage(void) { return mImage; }
-    inline const cv::Mat&       Image(void) const {return mImage; }
+    inline cv::Mat&             Image(void) { return mImage; }
+    inline const cv::Mat&       getImage(void) const {return mImage; }
     inline TpFrameIndex&        FrameIndex(void){ return mFrameIndex; }
     inline const TpFrameIndex   getFrameIndex(void)const{ return mFrameIndex; }
 protected:
@@ -73,10 +73,10 @@ protected:
 class StereoFrame: public Frame{
 public:
     virtual TpFrame             type(void) const override {return TpStereo;}
-    inline cv::Mat&             getImageLeft(void){ return getImage(); }
-    inline cv::Mat&             getImageRight(void){ return mImageRight; }
-    inline const cv::Mat&       ImageLeft(void) const {return Image(); }
-    inline const cv::Mat&       ImageRight(void) const {return mImageRight; }
+    inline cv::Mat&             ImageLeft(void){ return Image(); }
+    inline cv::Mat&             ImageRight(void){ return mImageRight; }
+    inline const cv::Mat&       getImageLeft(void) const {return getImage(); }
+    inline const cv::Mat&       getImageRight(void) const {return mImageRight; }
 protected:
     cv::Mat                     mImageRight;
 };

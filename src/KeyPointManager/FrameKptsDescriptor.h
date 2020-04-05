@@ -60,6 +60,13 @@ extern TpFuncIsIDAndFrameKptsDescriptorMatch          FuncIsIDAndFrameKptsDescri
 extern TpFuncIsFrameStasify             FuncIsKeyFrame;
 extern TpFuncIsFrameStasify             FuncIsNotKeyFrame;
 
+
+template<typename TpFrameType>
+bool FuncIsIDAndFrameDataMatch(TpFrameType& fFrame, const TpFrameID nFrameID)
+{
+    return fFrame.FrameID() == nFrameID;
+}
+
 template<typename TpFrameType>
 bool FuncIsKeyFrameTemplate(TpFrameType& fFrame){
     return fFrame.FrameID() == 0;
@@ -121,6 +128,7 @@ class FrameKptsDescriptorHistory: public TpFrameDataHistory<TpOneFrameKptDescrip
 public:
     FrameKptsDescriptorHistory():TpFrameDataHistory(FuncIsIDAndFrameKptsDescriptorMatch){}
 };
+
 
 class FrameHistory: public TpFrameDataHistory<Type::Frame>
 {

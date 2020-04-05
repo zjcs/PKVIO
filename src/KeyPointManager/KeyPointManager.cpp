@@ -21,7 +21,7 @@ void KeyPointManager::initialize(void) {
 
 FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
 {
-   //AutoLogTimer("KeyPoint extract and match");
+   Tools::Timer tTimer("KeyPoint extract and match");
    mFrameMatchResult.clear();
     
     // extract;
@@ -30,7 +30,9 @@ FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
     
     // match;
     TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(mKptsDescriptors);
+    
     mPtrDesciptorMatcher->showMatchResult(f, mKptsDescriptors, mMatchResult, "Left | Right - Match Result");
+    //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
     mFrameMatchResult.pushInnerFrameDescriptorMatchResult(mMatchResult);
     
     // track from previous frames.
@@ -42,12 +44,13 @@ FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
     const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(f);
     mFrameHistoryRecord.push(fStereoFrame);
     
+    mFrameMatchResultHistoryRecord.push(getFrameMatchResult());
     return getFrameMatchResult();
 }
 
 void KeyPointManager::extract ( const Type::Frame& f , TpOneFrameKptDescriptor& mKptsDescriptors) 
 {    
-    //AutoLogTimer("KeyPoint extract");
+    //Tools::Timer tTimer("KeyPoint extract");
     if(f.type()!= Type::TpFrame::TpStereo){
         cout << "Error: Frame type donot match, exit."<<endl;
         throw;
@@ -55,8 +58,8 @@ void KeyPointManager::extract ( const Type::Frame& f , TpOneFrameKptDescriptor& 
     
     const Type::StereoFrame& sf = dynamic_cast<const Type::StereoFrame&>(f);
     //auto& mImgLeft = sf.
-    auto& mImgLeft  = sf.ImageLeft();
-    auto& mImgRight = sf.ImageRight();
+    auto& mImgLeft  = sf.getImageLeft();
+    auto& mImgRight = sf.getImageRight();
     
     //int nRows = mImgLeft.rows, nCols = mImgLeft.cols;
     
@@ -109,7 +112,7 @@ void KeyPointManager::initializeHistoryRecord()
 
 
 void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fCurFrameKptDescriptor) {
-    //AutoLogTimer("KeyPoint track");
+    //Tools::Timer tTimer("KeyPoint track");
     
     if(mFrameKptsDescriptorHistoryRecord.empty() || mFrameHistoryRecord.empty())
         return;
@@ -120,10 +123,7 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     const StereoFrame& fCurStereoFrame              = dynamic_cast<const StereoFrame&>(fCurFrame);
     const StereoFrame& fLastStereoFrame             = dynamic_cast<const StereoFrame&>(fLastFrame);
     
-    StereoFrame                 mPrevLeftAndCurLeftFrame;
-    mPrevLeftAndCurLeftFrame.initFrameID(fLastStereoFrame.FrameID());
-    mPrevLeftAndCurLeftFrame.getImageLeft()         = fLastStereoFrame.ImageLeft();
-    mPrevLeftAndCurLeftFrame.getImageRight()        = fCurStereoFrame.ImageLeft();
+    StereoFrame                 mPrevLeftAndCurLeftFrame = constructTrackFrame(fLastStereoFrame, fCurStereoFrame);
     
     TpOneFrameKptDescriptor     mPrevAndCurLeftKptsDescriptor;
     mPrevAndCurLeftKptsDescriptor.mFrameIDLeft      = fLastStereoFrame.FrameID();
@@ -141,6 +141,112 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     
     //AutoLogTimer("KeyPoint show match");
     mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
+    //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
+}
+
+
+Type::StereoFrame KeyPointManager::constructTrackFrame(const Type::Frame& fFramePrev, const Type::Frame& fFrameCur) {
+    StereoFrame                 mPrevLeftAndCurLeftFrame;
+    mPrevLeftAndCurLeftFrame.initFrameID(fFramePrev.FrameID());
+    mPrevLeftAndCurLeftFrame.ImageLeft()         = fFramePrev.getImage();    // Prev-Mono or Prev-Stereo-Left;
+    mPrevLeftAndCurLeftFrame.ImageRight()        = fFrameCur.getImage();     // Prev-Mono or Cur-Stereo-Left;
+    return mPrevLeftAndCurLeftFrame;
+}
+
+
+cv::Mat KeyPointManager::showMatchResult(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle)
+{
+    const TpFrameID nFrameIDMaster = fKptsDesc.FrameIDLeft(),nFrameIDSlaver = fKptsDesc.FrameIDRight();
+    if(nFrameIDMaster == nFrameIDSlaver) {
+        //
+        const TpFrameID nStereoFrameID =  nFrameIDMaster;
+        if(mFrameHistoryRecord.isExisting(nStereoFrameID)) {
+            StereoFrame& pStereoFrame = dynamic_cast<StereoFrame&>(mFrameHistoryRecord.get(nStereoFrameID));
+            return mPtrDesciptorMatcher->showMatchResult(pStereoFrame, fKptsDesc, mBestVecMatchResult, sWindowTitle);
+        } else {
+            cout << "Not implemention to read frame by id."<<endl;
+            throw;
+            return cv::Mat();
+        }
+    } else {
+        if(mFrameHistoryRecord.isExisting(nFrameIDMaster)&&mFrameHistoryRecord.isExisting(nFrameIDSlaver)) {
+            StereoFrame fStereoFrame = constructTrackFrame(mFrameHistoryRecord.get(nFrameIDMaster), mFrameHistoryRecord.get(nFrameIDSlaver));
+            return mPtrDesciptorMatcher->showMatchResult(fStereoFrame, fKptsDesc, mBestVecMatchResult, sWindowTitle);
+        }
+    }
+}
+
+cv::Mat KeyPointManager::showMatchResult(const Type::TpFrameID nFrameIDStereo) {
+    // show left-right match result;
+    
+    TpOneFrameKptDescriptor nFrameKptDescriptorStereo;
+    TpDescriptorMatchResult nDescriptorsMatchResult;
+    if(!getTrackingKptDescriptorMatchResult(nFrameIDStereo,nFrameIDStereo, nFrameKptDescriptorStereo, nDescriptorsMatchResult))
+        return cv::Mat();
+    return showMatchResult(nFrameKptDescriptorStereo, nDescriptorsMatchResult, "Match:L|R-"+Type::toString(nFrameIDStereo));
+}
+
+cv::Mat KeyPointManager::showMatchResult(const Type::TpFrameID nFrameIDMaster, const Type::TpFrameID nFrameIDSlaver, bool bShow) {
+    TpOneFrameKptDescriptor nFrameKptDescriptorPrevCur;
+    TpDescriptorMatchResult nDescriptorsMatchResult;
+    getTrackingKptDescriptorMatchResult(nFrameIDMaster, nFrameIDSlaver,nFrameKptDescriptorPrevCur, nDescriptorsMatchResult);
+    return showMatchResult(nFrameKptDescriptorPrevCur, nDescriptorsMatchResult, "Match:M|S-"+Type::toString(nFrameIDMaster)+"|"+toString(nFrameIDSlaver));
+}
+
+bool KeyPointManager::getTrackingKptDescriptorMatchResult(const Type::TpFrameID nFrameIDMaster, const Type::TpFrameID nFrameIDSlaver, PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& nMatchResult) 
+{
+     // draw the match and debug.
+    if(nFrameIDMaster == nFrameIDSlaver){
+        const TpFrameID nFrameIDStereo = nFrameIDMaster;
+        if(!mFrameKptsDescriptorHistoryRecord.isExisting(nFrameIDStereo))
+            return false;
+    
+        if(!mFrameMatchResultHistoryRecord.isExisting(nFrameIDStereo))
+            return false; 
+        FrameMatchResult& nFrameMatchResultStereo = mFrameMatchResultHistoryRecord.get(nFrameIDStereo);
+        if(!nFrameMatchResultStereo.isExistInnerFrameDescriptorMatchResult())
+            return false;
+        
+        // kptdesc
+        fKptsDesc = mFrameKptsDescriptorHistoryRecord.get(nFrameIDStereo);
+        
+        // match result
+        nMatchResult = nFrameMatchResultStereo.getInnerFrameDescriptorMatchResult();
+    }else{
+        if(!mFrameKptsDescriptorHistoryRecord.isExisting(nFrameIDMaster)||!mFrameHistoryRecord.isExisting(nFrameIDSlaver))
+            return false;
+        
+        if(!mFrameMatchResultHistoryRecord.isExisting(nFrameIDSlaver))
+            return false;
+        FrameMatchResult& mFrameMatchResultSlaver = mFrameMatchResultHistoryRecord.get(nFrameIDSlaver);
+        int nOuterIndex = mFrameMatchResultSlaver.getOuterIndex(nFrameIDMaster);
+        if(nOuterIndex == -1)
+            return false;
+        
+        TpOneFrameKptDescriptor& nFrameKptDescriptorMaster = mFrameKptsDescriptorHistoryRecord.get(nFrameIDMaster);
+        TpOneFrameKptDescriptor& nFrameKptDescriptorSlaver = mFrameKptsDescriptorHistoryRecord.get(nFrameIDSlaver);
+        
+        // kptdesc
+        fKptsDesc = constructTrackingKptDescriptor(nFrameKptDescriptorMaster, nFrameKptDescriptorSlaver);
+        
+        // match
+        nMatchResult = mFrameMatchResultSlaver.getOuterFrameDescriptorMatchResult(nOuterIndex);        
+    }
+}
+
+PKVIO::KeyPointManager::TpOneFrameKptDescriptor KeyPointManager::constructTrackingKptDescriptor(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fFrameKptDescriptorPrev, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fFrameKptDescriptorCur) 
+{
+    TpOneFrameKptDescriptor nPrevCurKptDescriptor;
+    
+    nPrevCurKptDescriptor.mFrameIDLeft      = fFrameKptDescriptorPrev.FrameIDLeft();
+    nPrevCurKptDescriptor.mFrameIDRight     = fFrameKptDescriptorCur.FrameIDLeft();
+    nPrevCurKptDescriptor.mKeyPointsLeft    = fFrameKptDescriptorPrev.mKeyPointsLeft;
+    nPrevCurKptDescriptor.mKeyPointsRight   = fFrameKptDescriptorCur.mKeyPointsLeft;
+    
+    nPrevCurKptDescriptor.mDescriptorsLeft  = fFrameKptDescriptorPrev.mDescriptorsLeft;
+    nPrevCurKptDescriptor.mDescriptorsRight = fFrameKptDescriptorCur.mDescriptorsLeft;
+    
+    return nPrevCurKptDescriptor;
 }
 
 }

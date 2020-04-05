@@ -13,43 +13,7 @@ using namespace std;
 namespace PKVIO{
 namespace KeyPointManager{
     
-class FrameMatchResult{
-public:
-    FrameMatchResult():mbInnerFrameDescriptorMatchResult(false){}
-    void                                clear(void){mbInnerFrameDescriptorMatchResult=false;mVecDescriptorMatchResult.clear();}
-    bool                                isExistInnerFrameDescriptorMatchResult(void) const { return mbInnerFrameDescriptorMatchResult;}
-    void                                pushInnerFrameDescriptorMatchResult(TpDescriptorMatchResult& mInnerFrameDescMatchResult){
-        mbInnerFrameDescriptorMatchResult = true;
-        mVecDescriptorMatchResult.insert(mVecDescriptorMatchResult.begin(), mInnerFrameDescMatchResult);
-    }
-    const TpDescriptorMatchResult&      getInnerFrameDescriptorMatchResult(void) const {
-        if(!mbInnerFrameDescriptorMatchResult)
-            throw;
-        return mVecDescriptorMatchResult[0];
-    }
-    
-    inline int                              size(void) const {return (int)mVecDescriptorMatchResult.size();}
-    inline const TpDescriptorMatchResult&   getFrameDescriptoreMatchResult(const int nIndex) const { return mVecDescriptorMatchResult[nIndex]; }
-    inline const int                        sizeOuterFrameDescriptorMatchResult(void) const {return isExistInnerFrameDescriptorMatchResult()?size()-1:size();}
-    inline void                             pushOuterFrameDescriptorMatchResult(TpDescriptorMatchResult& mOuterFrameDescMatchResult){mVecDescriptorMatchResult.push_back(mOuterFrameDescMatchResult);}
-    inline const TpDescriptorMatchResult&   getOuterFrameDescriptorMatchResult(const int nOuterIndex) const {
-        return mVecDescriptorMatchResult[mbInnerFrameDescriptorMatchResult?nOuterIndex+1:nOuterIndex];
-    }
-    
-    inline const int                        getCountKptsOnThisFrame(void) const {
-        if(isExistInnerFrameDescriptorMatchResult()){
-            return getInnerFrameDescriptorMatchResult().getCountNonDuplicateKpts();
-        }else{
-            cout << "Mono. Not Support Now. exit" <<endl;
-            throw;
-        }
-        
-    }
-private:
-    bool                                    mbInnerFrameDescriptorMatchResult;
-    std::vector<TpDescriptorMatchResult>    mVecDescriptorMatchResult;
-};
-    
+   
 class KeyPointManager{
 public:
     KeyPointManager(void);
@@ -68,11 +32,22 @@ public:
     inline StereoFrameHistory&  getStereoFrameHistory(void){return mFrameHistoryRecord;}
     
     inline FrameKptsDescriptorHistory& getFrameKptsDescriptorHistory(void){return mFrameKptsDescriptorHistoryRecord;}
+
+    cv::Mat                     showMatchResult(const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle = "mBestMatch");
+    
+    
+    cv::Mat                     showMatchResult(const TpFrameID nFrameIDStereo);
+    cv::Mat                     showMatchResult(const TpFrameID nFrameIDMaster,const TpFrameID nFrameIDSlaver, bool bShow);
+    
+    bool                        getTrackingKptDescriptorMatchResult(const TpFrameID nFrameIDMaster,const TpFrameID nFrameIDSlaver, TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& nMatchResult);
 protected:
     void                        track(const Frame& fCurFrame, const TpOneFrameKptDescriptor& fCurFrameKptDescriptor);
     
     // for what?
     const Frame&                getLastFrame(void){ return mFrameHistoryRecord.back(); }
+    
+    StereoFrame                 constructTrackFrame(const Frame& fFramePrev, const Frame& fFrameCur);
+    TpOneFrameKptDescriptor     constructTrackingKptDescriptor(const TpOneFrameKptDescriptor& fFrameKptDescriptorPrev, const TpOneFrameKptDescriptor& fFrameKptDescriptorCur);
 private:
     inline void                 initialize(void);
     
@@ -90,6 +65,7 @@ private:
     StereoFrameHistory          mFrameHistoryRecord;
     
     FrameMatchResult            mFrameMatchResult;
+    FrameMatchResultHistory     mFrameMatchResultHistoryRecord;
 }; 
 
 }
