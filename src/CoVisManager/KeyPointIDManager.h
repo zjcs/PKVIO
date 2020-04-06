@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include "../Type/type.h"
+#include "../Tools/Tools.h"
 
 using namespace std;
 
@@ -101,6 +102,21 @@ public:
             throw;
         return FindIter->second;
     }
+    
+    inline const TpVecKeyPointID        getCoVisKeyPointIDs(const TpFrameID nFrameID1, const TpFrameID nFrameID2){
+                                            TpVecKeyPointID nVecKptIDs1 = OneFrameIDManager(nFrameID1).getAllKeyPointIDs();
+                                            TpVecKeyPointID nVecKptIDs2 = OneFrameIDManager(nFrameID2).getAllKeyPointIDs();
+                                            TpSetKeyPointID nSetKptIDs1(nVecKptIDs1.begin(),nVecKptIDs1.end());
+                                            vector<bool> nbVecKptIDs2FilterTrueSave(nVecKptIDs2.size(),false);
+                                            for(int nIdx=0,nSz=nVecKptIDs2.size();nIdx<nSz;++nIdx){
+                                                if(nSetKptIDs1.count(nVecKptIDs2[nIdx])) nbVecKptIDs2FilterTrueSave[nIdx] = true;
+                                            }
+                                            Tools::filter(nVecKptIDs2, nbVecKptIDs2FilterTrueSave);
+                                            return nVecKptIDs2;
+                                        }
+    inline const int                    sizeCoVisKptIDs(const TpFrameID nFrameID1, const TpFrameID nFrameID2){
+                                            return (int)(getCoVisKeyPointIDs(nFrameID1,nFrameID2).size());
+                                        }
     
     void                                addOneFrameIDManager(const TpFrameIndex nFrameIndex, const TpFrameID nFrameID, const int nCountKpts);
     

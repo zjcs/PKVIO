@@ -2,6 +2,7 @@
 #define __GRAPHNODE_H__
 
 #include<vector>
+#include "Frame.h"
 
 using namespace std;
 
@@ -17,14 +18,23 @@ typedef enum{
     EnBreak,
     EnReturn
 }EnForFlag;   
+
+//template<typename T>
+//const Type::TpFrameID getFrameIDTemplate(const T& nNodeData){
+//    return nNodeData.FrameID();
+//}
     
 template<typename T>
 class Graph
 {
 public:
+    
+typedef T                   TpNodeData;
+
 class Node;
 typedef Node*               TpPtrNode;
 typedef vector<TpPtrNode>   TpVecPtrNodes;
+
 
 inline bool isNodeNull(TpPtrNode p){return p==nullptr;}
 
@@ -43,14 +53,34 @@ public:
     void                initNodeIndexInGraph(const int nIndexInGraph){mIndexInGraph = nIndexInGraph; }
     const int           getNodeIndexInGraph(void) const {return mIndexInGraph;}
 
-    //bool                operator<( T& n){return false;}
+    //bool                operator==(const T& n){return mPtrData == n;}
+    //const Type::TpFrameID     getFrameID(void){ return getFrameIDTemplate(mPtrData); }
 
     const int           sizeAdjoinNodes(void) const {return (int)mVecAdjoinNodes.size();}
     TpPtrNode           NodeByIndex(const int nAdjoinIndex){return mVecAdjoinNodes[nAdjoinIndex];}
     const TpPtrNode     getNodeByIndex(const int nAdjoinIndex)const{return mVecAdjoinNodes[nAdjoinIndex];}
     T&                  Data(void){return mPtrData;}
     const T&            getData(void)const {return mPtrData;}
-    void                addAdjoin(TpPtrNode pAdjoint){mVecAdjoinNodes.push_back(pAdjoint);}
+    
+    const bool          isEqualTo(const TpPtrNode pNode) const {
+                            bool nbAjointByPtr      = this == pNode;
+                            bool nbAjointByIndex    = this->mIndexInGraph == pNode->mIndexInGraph;
+                            bool nbAjointByData     = this->getData() == pNode->getData();
+                            
+                            assert(nbAjointByPtr == nbAjointByIndex && nbAjointByIndex == nbAjointByData);
+                            return nbAjointByData;
+                            
+                        }
+                        
+    const bool          isAdjoinTo(const TpPtrNode pNode)const{
+                            return std::count_if(mVecAdjoinNodes.begin(), mVecAdjoinNodes.end(),
+                                [&](const TpPtrNode& pNodeAdjoin){ return pNodeAdjoin->isEqualTo(pNode); });
+                        };
+    
+    void                addAdjoin(TpPtrNode pAdjoint, bool bForce=false){
+                            assert(isAdjoinTo(pAdjoint) == false);
+                            mVecAdjoinNodes.push_back(pAdjoint);
+                        }
 
     void                clear(void){ mIndexInGraph = -1; mVecAdjoinNodes.clear();}
 
@@ -68,12 +98,42 @@ public:
 TpPtrNode           generateNodeAndAddIntoGraph(const T& nData){ auto pNode = generateNode(nData); addIntoGraph(pNode); return pNode;}
 
 void                addEdgeUndirectional(TpPtrNode pFromNode, TpPtrNode pToNode){ pFromNode->addAdjoin(pToNode); }
-void                addEdgeBidirectional(TpPtrNode pNodeA, TpPtrNode pNodeB){ pNodeA->addAdjoin(pNodeB); pNodeB->addAdjoin(pNodeA); }
+void                addEdgeBidirectional(TpPtrNode pNodeA, TpPtrNode pNodeB){
+                        pNodeA->addAdjoin(pNodeB);
+                        pNodeB->addAdjoin(pNodeA);
+                    }
 
 const int           sizeNodeInGraph(void){return mNodes.size();}
 
 TpPtrNode           NodeByIndex (const int nNodeIndexInGraph) {return mNodes[nNodeIndexInGraph];}
 const TpPtrNode     getNodeByIndex (const int nNodeIndexInGraph)const  {return mNodes[nNodeIndexInGraph];}
+
+// nMaxDepth: -1 means no depth limitation, all node will be visited while 0 means no node will be visited.
+template<typename FuncVisit, typename FuncToSkipSpecifiedNode>
+void                widthSearchFirst(TpPtrNode pFistNode, int nMaxDepth, FuncVisit fVisit, FuncToSkipSpecifiedNode fSkip){
+    vector<bool> nVecFlagVisited(sizeNodeInGraph(), false);
+    widthSearchFirst(nullptr, pFistNode, nMaxDepth, fVisit, fSkip, nVecFlagVisited);
+}
+
+template<typename FuncVisit, typename FuncToSkipSpecifiedNode>
+void                widthSearchFirst(TpPtrNode pNodeFrom, TpPtrNode pNodeTo, int nMaxDepth, FuncVisit fVisit, FuncToSkipSpecifiedNode fSkip,  
+                                     vector<bool>&nVecFlagVisited){
+    
+    // nMaxDepth: -1 means no depth limitation, all node will be visited while 0 means no node will be visited.
+    if(nMaxDepth==0)return;
+    
+    int nIdxNodeInGraph = pNodeTo->getNodeIndexInGraph();
+    if(nVecFlagVisited[nIdxNodeInGraph] || fSkip(pNodeFrom, pNodeTo))
+        return;
+    
+    fVisit(pNodeFrom,pNodeTo);
+    nVecFlagVisited[nIdxNodeInGraph] = true;
+    
+    for(int nIdxAdjoin=0,nSzAdjoin=pNodeTo->sizeAdjoinNodes();nIdxAdjoin<nSzAdjoin;++nIdxAdjoin){
+        TpPtrNode pNodeNextTo = pNodeTo->getNodeByIndex(nIdxAdjoin);
+        widthSearchFirst(pNodeTo,pNodeNextTo, nMaxDepth-1, fVisit, fSkip, nVecFlagVisited);
+    }
+}
 
 //template<typename EqualFunc>
 //bool                QueryNodeByFunc(EqualFunc f);

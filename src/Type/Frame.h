@@ -35,6 +35,7 @@ inline bool                 isInvalideKeyPointID(const TpKeyPointID nKptID){retu
 inline bool                 isValideKeyPointID(const TpKeyPointID nKptID){return nKptID!=INVALIDKEYPOINTID;}
 
 typedef vector<TpFrameID>               TpVecFrameID;
+typedef set<TpFrameID>                  TpSetFrameID;
 typedef map<TpFrameID, TpFrameIndex>    TpMapFrameID2FrameIndex;
  
 typedef enum {

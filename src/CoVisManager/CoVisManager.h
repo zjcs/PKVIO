@@ -35,7 +35,8 @@ protected:
     
     int                         copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     
-    void                        updateCoVisGraph(void);
+    void                        updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame);
+    void                        updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const TpVecFrameID& nVecFrameIDsDirectAdjoin);
     
 
 private:

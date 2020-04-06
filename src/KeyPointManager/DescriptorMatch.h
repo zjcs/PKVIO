@@ -68,6 +68,10 @@ public:
             }
             return getFrameDescriptoreMatchResult(0).getFrameIDRight();
     }
+    void                                    pushFrameDescriptorMatchResult(TpDescriptorMatchResult& mFrameDescMatchResult){
+        bool bInner = mFrameDescMatchResult.getFrameIDLeft() == mFrameDescMatchResult.getFrameIDRight();
+        (bInner)? pushInnerFrameDescriptorMatchResult(mFrameDescMatchResult):pushOuterFrameDescriptorMatchResult(mFrameDescMatchResult);
+    }
     void                                    clear(void){mbInnerFrameDescriptorMatchResult=false;mVecDescriptorMatchResult.clear();}
     bool                                    isExistInnerFrameDescriptorMatchResult(void) const { return mbInnerFrameDescriptorMatchResult;}
     void                                    pushInnerFrameDescriptorMatchResult(TpDescriptorMatchResult& mInnerFrameDescMatchResult){

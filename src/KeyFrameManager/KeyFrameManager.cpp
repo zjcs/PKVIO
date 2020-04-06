@@ -10,30 +10,30 @@ namespace KeyFrameManager
     
 
 void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
-    const TpFrameID nCurFrameID = fFrame.FrameID();
+    const TpFrameID nCurFrameID     = fFrame.FrameID();
     
     auto FuncLogDebugKeyFrameGenerationInfo = [&](){
         mDebugKeyFrameGenerationInfo.mFrameID = nCurFrameID;
         mDebugKeyFrameGenerationInfo.log();
     };
     Tools::Timer tTimer(FuncLogDebugKeyFrameGenerationInfo, "KeyFrameManager Whole", false, &mDebugKeyFrameGenerationInfo.mTimeCostWhole);
-    mDebugKeyFrameGenerationInfo = DebugManager::DebugKeyFrameGenerationInfo();
+    mDebugKeyFrameGenerationInfo    = DebugManager::DebugKeyFrameGenerationInfo();
     //AutoLogTimer 
     
-    //int nCountSumTrackKpts    = mFrameKptIDMgr.sizeKeyPointsWithID();
-    int nCountSumTrackKpts      = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
-    int nCountKptsOnThisFrame   = mFrameKptIDMgr.sizeKeyPoints();
+    //int nCountSumTrackKpts        = mFrameKptIDMgr.sizeKeyPointsWithID();
+    int nCountSumTrackKpts          = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
+    int nCountKptsOnThisFrame       = mFrameKptIDMgr.sizeKeyPoints();
     
-    EnSLAMState eSLAMState = updateTrackState(nCountSumTrackKpts, nCountKptsOnThisFrame);
+    EnSLAMState eSLAMState          = updateTrackState(nCountSumTrackKpts, nCountKptsOnThisFrame);
     
     collectFirstDetectedKeyPointOnNonKeyFrame(fFrame, mFrameMatchResult, mFrameKptIDMgr);
         
-    mDebugKeyFrameGenerationInfo.nCountTrackedKptIDs    = mFrameKptIDMgr.sizeKeyPointsWithID();
-    mDebugKeyFrameGenerationInfo.nCountNewKptIDs        = mFrameKptIDMgr.sizeFirstKptIDsDetected();
-    mDebugKeyFrameGenerationInfo.nCountTrackedMapPoint  = nCountSumTrackKpts;
+    mDebugKeyFrameGenerationInfo.nCountTrackedKptIDs            = mFrameKptIDMgr.sizeKeyPointsWithID();
+    mDebugKeyFrameGenerationInfo.nCountNewKptIDs                = mFrameKptIDMgr.sizeFirstKptIDsDetected();
+    mDebugKeyFrameGenerationInfo.nCountTrackedMapPoint          = nCountSumTrackKpts;
     //cout << "Track | L+R Match: "  << nCountSumTrackKpts << " | " << mFrameKptIDMgr.str() << endl;
-    mDebugKeyFrameGenerationInfo.nCountFirstDetectedKptIDs          = mLstFirstDetectedKptIDBeforKF.size();
-    mDebugKeyFrameGenerationInfo.mLastKeyFrameID = mKeyFrameIDGenerator.getLastID();
+    mDebugKeyFrameGenerationInfo.nCountFirstDetectedKptIDs      = mLstFirstDetectedKptIDBeforKF.size();
+    mDebugKeyFrameGenerationInfo.mLastKeyFrameID                = mKeyFrameIDGenerator.getLastID();
     
     switch(eSLAMState){
         case EnNeedKF: 
