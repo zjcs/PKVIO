@@ -7,6 +7,8 @@
 #include <memory>
 #include <iostream>
 
+#include "../DebugManager/DebugManager.h"
+
 using namespace std;
 
 namespace PKVIO
@@ -132,6 +134,9 @@ public:
     cv::Mat                     showMatchResult(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle = "mBestMatch");
     
     bool                        debugDuplicatedMatch(const Frame& fFrame, const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult);
+    
+    inline const DebugManager::DebugMatchInfo& 
+                                getDebugMatchInfo(void)const{return mDebugMatchInfo;}
 protected:
     TpDescriptorMatchResult     matchByKnn(const TpOneFrameKptDescriptor& fKptsDesc);
     TpDescriptorMatchResult     matchByBrutForceInWindow(const TpOneFrameKptDescriptor& fKptsDesc);
@@ -143,6 +148,8 @@ private:
     const EnMatchMethod         mEnMatchMethod; 
     
     const string                mStrDefaultWindowTitle;
+    
+    DebugManager::DebugMatchInfo    mDebugMatchInfo;
 };   
 
 typedef std::shared_ptr<DescriptorMatch> PtrDescriptorMatch;

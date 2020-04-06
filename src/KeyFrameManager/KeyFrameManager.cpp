@@ -11,18 +11,28 @@ namespace KeyFrameManager
 
 void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
     const TpFrameID nCurFrameID = fFrame.FrameID();
-   Tools::Timer tTimer("KeyFrameManager Whole");
-   //AutoLogTimer 
     
-    //int nCountSumTrackKpts = mFrameKptIDMgr.sizeKeyPointsWithID();
-    int nCountSumTrackKpts = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
-    int nCountKptsOnThisFrame = mFrameKptIDMgr.sizeKeyPoints();
+    auto FuncLogDebugKeyFrameGenerationInfo = [&](){
+        mDebugKeyFrameGenerationInfo.mFrameID = nCurFrameID;
+        mDebugKeyFrameGenerationInfo.log();
+    };
+    Tools::Timer tTimer(FuncLogDebugKeyFrameGenerationInfo, "KeyFrameManager Whole", false, &mDebugKeyFrameGenerationInfo.mTimeCostWhole);
+    mDebugKeyFrameGenerationInfo = DebugManager::DebugKeyFrameGenerationInfo();
+    //AutoLogTimer 
     
-    cout << "Track | L+R Match: "  << nCountSumTrackKpts << " | " << mFrameKptIDMgr.str() << endl;
+    //int nCountSumTrackKpts    = mFrameKptIDMgr.sizeKeyPointsWithID();
+    int nCountSumTrackKpts      = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
+    int nCountKptsOnThisFrame   = mFrameKptIDMgr.sizeKeyPoints();
     
     EnSLAMState eSLAMState = updateTrackState(nCountSumTrackKpts, nCountKptsOnThisFrame);
     
     collectFirstDetectedKeyPointOnNonKeyFrame(fFrame, mFrameMatchResult, mFrameKptIDMgr);
+        
+    mDebugKeyFrameGenerationInfo.nCountTrackedKptIDs    = mFrameKptIDMgr.sizeKeyPointsWithID();
+    mDebugKeyFrameGenerationInfo.nCountNewKptIDs        = mFrameKptIDMgr.sizeFirstKptIDsDetected();
+    mDebugKeyFrameGenerationInfo.nCountTrackedMapPoint  = nCountSumTrackKpts;
+    //cout << "Track | L+R Match: "  << nCountSumTrackKpts << " | " << mFrameKptIDMgr.str() << endl;
+    mDebugKeyFrameGenerationInfo.nCountFirstDetectedKptIDs          = mLstFirstDetectedKptIDBeforKF.size();
     
     switch(eSLAMState){
         case EnNeedKF: 
@@ -39,40 +49,48 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
 
 EnSLAMState KeyFrameManager::updateTrackState(int nCountSumTrackKpts, int nCountKptsOnThisFrame) {
     //
+    EnSLAMState eSLAMState = EnUnKnown;
+    std::string sSLAMState;
     if(nCountSumTrackKpts<30) {
         if(nCountKptsOnThisFrame > 50) {
             // new key frame
-            cout << "#### need new key frame" <<endl;
-            return EnNeedKF;
+            sSLAMState = "#### need keyframe";
+            eSLAMState = EnNeedKF;
         } else {
             // lost
-            cout << "lost" << endl;
-            return EnLost;
+            sSLAMState = "@@@@ lost";
+            eSLAMState = EnLost;
         }
     } else {
         // normal non-keyframe
-        cout << "normal non-keyframe" <<endl;
-        return EnNonKF;
+        sSLAMState = "      non-keyframe";
+        eSLAMState = EnNonKF;
     }
+    mDebugKeyFrameGenerationInfo.mStrKeyFrameGeneration = sSLAMState;
+    return eSLAMState;
 }
 
 void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManager::FrameMatchResult& mFrameMatchResult,
                         KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) 
 {
-    Tools::Timer tTimer("createOneKeyFrame");
-    {
-        
-        Tools::Timer tTimer("createOneKeyFrame - set");
-        TpSetKeyPointID nSetFirstDetectedKptID(mLstFirstDetectedKptIDBeforKF.begin(), mLstFirstDetectedKptIDBeforKF.end());
-    }
-    TpSetKeyPointID nSetFirstDetectedKptID(mLstFirstDetectedKptIDBeforKF.begin(), mLstFirstDetectedKptIDBeforKF.end());
-     cout << "First Detected KptIDs: " << nSetFirstDetectedKptID.size() << endl;
-     mLstFirstDetectedKptIDBeforKF.clear();
+    //Tools::Timer tTimer("createOneKeyFrame", true);
      
-    TpVecKeyPointID nVecAllKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
+    //TpVecKeyPointID nVecAllKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
+    TpVecKeyPointID nVecAllKptIDs;
     
     {
-        Tools::Timer tTimer("createOneKeyFrame - generate mappoint");
+        int nCountFirstDetectedKptIDs = 0, nCountFirstDetectedKptIDToMapIDs = 0;
+        auto FuncAddFirstDetectedKptIDAndMapIDInfo = [&](){
+            mDebugKeyFrameGenerationInfo.nCountFirstDetectedKptIDToMapIDs   = nCountFirstDetectedKptIDToMapIDs;
+        };
+        Tools::Timer tTimer(FuncAddFirstDetectedKptIDAndMapIDInfo,"createOneKeyFrame - generate mappoint", 
+                            false, &mDebugKeyFrameGenerationInfo.mTimeCostGenerateMapPoint);
+        
+        nVecAllKptIDs = mFrameKptIDMgr.getAllKeyPointIDs(); 
+        TpSetKeyPointID nSetFirstDetectedKptID(mLstFirstDetectedKptIDBeforKF.begin(), mLstFirstDetectedKptIDBeforKF.end());
+        nCountFirstDetectedKptIDs = nSetFirstDetectedKptID.size();
+        mLstFirstDetectedKptIDBeforKF.clear();
+        
         for(auto Iter=nVecAllKptIDs.begin(), EndIter = nVecAllKptIDs.end();Iter!=EndIter;++Iter){
         TpKeyPointID nKptID = *Iter;
         
@@ -87,7 +105,7 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
         //if(mMapPointIDManager.isExistingMapPointID(nKptID))
         //    continue;
         
-        
+        ++nCountFirstDetectedKptIDToMapIDs;
         TpMapPointID nMapPointID    = mMapPointIDManager.generateOneMapPointID(nKptID);
         
         // only this KF observe this kpt, other observe is non-KF.
@@ -96,7 +114,7 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
     }
    
     {
-        Tools::Timer tTimer("createOneKeyFrame - add measuremnt");
+        Tools::Timer tTimer("createOneKeyFrame - add measuremnt", false , &mDebugKeyFrameGenerationInfo.mTimeCostAddMeasurement);
         // copy the measuremnt from this frame to MapPoint.
         TpVecKeyPointIndex nVecAllKptIndex = mFrameKptIDMgr.getAllKeyPointIndexsWithID();
         for(int nIdxKptID =0,nSzKptID=nVecAllKptIDs.size();nIdxKptID<nSzKptID;++nIdxKptID){
@@ -117,14 +135,14 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
 
 void KeyFrameManager::collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) 
 {
-    Tools::Timer tTimer("collectFirstDetectedKeyPointOnNonKeyFrame");
+    Tools::Timer tTimer("collectDetectedKptID", false, &mDebugKeyFrameGenerationInfo.mTimeCostAccFirstDetectedKptIDs);
     TpVecKeyPointID nLstFirstDetectedKptID = mFrameKptIDMgr.getFirstDetectedKptIDs();
     mLstFirstDetectedKptIDBeforKF.insert(mLstFirstDetectedKptIDBeforKF.end(), nLstFirstDetectedKptID.begin(),nLstFirstDetectedKptID.end());
 }
 
 
 int KeyFrameManager::countTrackKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
-    Tools::Timer tTimer("countTrackKptIDsWithMapPointID");
+    Tools::Timer tTimer("countTrackKptIDsWithMapPointID", false , &mDebugKeyFrameGenerationInfo.mTimeCostCountTrackedMapPoint);
     TpVecKeyPointID nKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
     return std::count_if(nKptIDs.begin(),nKptIDs.end(),[&](const TpKeyPointID nKptID) {
         return mMapPointIDManager.isExistingMapPointID(nKptID);

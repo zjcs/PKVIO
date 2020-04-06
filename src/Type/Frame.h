@@ -26,6 +26,7 @@ typedef list<TpKeyPointID>      TpLstKeyPointID;
 typedef vector<TpKeyPointIndex> TpVecKeyPointIndex;
 typedef list<TpKeyPointIndex>   TpLstKeyPointIndex;
 typedef vector<TpKeyFrameID>    TpVecKeyFrameID;
+typedef list<TpKeyFrameID>      TpLstKeyFrameID;
 
 extern const TpFrameID      INVALIDFRAMEID;     
 extern const TpKeyPointID   INVALIDKEYPOINTID;     

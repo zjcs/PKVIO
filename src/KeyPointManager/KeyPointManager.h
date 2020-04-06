@@ -7,6 +7,7 @@
 #include "FrameKptsDescriptor.h"
 #include "DescriptorMatch.h"
 #include <iostream>
+#include "../DebugManager/DebugManager.h"
 
 using namespace std;
 
@@ -66,6 +67,8 @@ private:
     
     FrameMatchResult            mFrameMatchResult;
     FrameMatchResultHistory     mFrameMatchResultHistoryRecord;
+    
+    DebugManager::DebugKeyPointTrackingInfo mDebugKeyPointTrackingInfo;
 }; 
 
 }

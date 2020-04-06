@@ -20,6 +20,17 @@ const TpVecMatchPairs TpDescriptorMatchResult::getMatchPairs() const {
 
 TpDescriptorMatchResult DescriptorMatch::match(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
     TpDescriptorMatchResult nMatResult;
+    
+    auto FuncLogDeubgInfo = [&](void)->void{
+        mDebugMatchInfo.mCountKptsLeft  = nMatResult.getCountKptsLeft();
+        mDebugMatchInfo.mCountKptsRight = nMatResult.getCountKptsRight();
+        mDebugMatchInfo.mFrameIDMaster  = nMatResult.getFrameIDLeft();
+        mDebugMatchInfo.mFrameIDSlaver  = nMatResult.getFrameIDRight();
+        mDebugMatchInfo.mCountKptsMatch = nMatResult.getCountMatchKpts();
+        mDebugMatchInfo.log();
+    };
+    Tools::Timer tTimer(FuncLogDeubgInfo, "Match", false, &mDebugMatchInfo.mTimeCost);
+    
     switch(mEnMatchMethod){
         case EnKnnWholeImage: nMatResult = matchByKnn(fKptsDesc); break;
         case EnBrutForceInWindow: nMatResult = matchByBrutForceInWindow(fKptsDesc); break;

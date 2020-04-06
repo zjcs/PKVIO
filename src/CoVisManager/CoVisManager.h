@@ -5,6 +5,7 @@
 #include "../Type/type.h"
 #include "KeyPointIDManager.h"
 #include "CoVisGraph.h"
+#include "../DebugManager/DebugManager.h"
 
 namespace PKVIO
 {
@@ -40,6 +41,7 @@ protected:
 private:
     KeyPointManager::KeyPointIDManager mKeyPointIDManager;
     TpPtrCoVisGraph                    mPtrCoVisGraph;
+    DebugManager::DebugCoVisInfo       mDebugCoVisInfo; 
 };
     
 }

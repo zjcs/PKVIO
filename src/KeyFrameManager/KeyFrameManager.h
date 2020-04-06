@@ -6,6 +6,7 @@
 #include "../KeyPointManager/KeyPointManager.h"
 #include "../CoVisManager/KeyPointIDManager.h"
 #include "KFMapPointManager.h"
+#include "../DebugManager/DebugManager.h"
 
 
 namespace PKVIO
@@ -109,6 +110,8 @@ private:
     vector<TpFrameID>                   mMapKFID2FrameID;
     
     list<TpKeyPointID>                  mLstFirstDetectedKptIDBeforKF;
+private:
+    DebugManager::DebugKeyFrameGenerationInfo   mDebugKeyFrameGenerationInfo;
 };
 
 typedef shared_ptr<KeyFrameManager> PtrKeyFrameManager;

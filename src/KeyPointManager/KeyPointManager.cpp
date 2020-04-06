@@ -21,9 +21,15 @@ void KeyPointManager::initialize(void) {
 
 FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
 {
-   Tools::Timer tTimer("KeyPoint extract and match");
-   mFrameMatchResult.clear();
+    auto FuncLogDebugKeyPointTrackingInfo = [&](){
+        mDebugKeyPointTrackingInfo.mFrameID = f.FrameID();
+        mDebugKeyPointTrackingInfo.log();
+    };
     
+    mDebugKeyPointTrackingInfo = DebugManager::DebugKeyPointTrackingInfo();
+    Tools::Timer tTimer(FuncLogDebugKeyPointTrackingInfo, "KeyPoint extract and match", false, &mDebugKeyPointTrackingInfo.mTimeCostWhole);
+    mFrameMatchResult.clear();
+        
     // extract;
     TpOneFrameKptDescriptor mKptsDescriptors;
     extract(f, mKptsDescriptors);
@@ -174,6 +180,7 @@ cv::Mat KeyPointManager::showMatchResult(const PKVIO::KeyPointManager::TpOneFram
             return mPtrDesciptorMatcher->showMatchResult(fStereoFrame, fKptsDesc, mBestVecMatchResult, sWindowTitle);
         }
     }
+    return cv::Mat();
 }
 
 cv::Mat KeyPointManager::showMatchResult(const Type::TpFrameID nFrameIDStereo) {
@@ -232,6 +239,7 @@ bool KeyPointManager::getTrackingKptDescriptorMatchResult(const Type::TpFrameID 
         // match
         nMatchResult = mFrameMatchResultSlaver.getOuterFrameDescriptorMatchResult(nOuterIndex);        
     }
+    return true;
 }
 
 PKVIO::KeyPointManager::TpOneFrameKptDescriptor KeyPointManager::constructTrackingKptDescriptor(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fFrameKptDescriptorPrev, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fFrameKptDescriptorCur) 

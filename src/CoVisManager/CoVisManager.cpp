@@ -19,7 +19,11 @@ CoVisManager::CoVisManager()
     
 void CoVisManager::solve (const Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult ) 
 {
-    Tools::Timer tTimer("CoVis Whole");
+    auto FuncLogDebugCoVisInfo = [&](){
+        mDebugCoVisInfo.mFrameID = fFrame.FrameID();
+        mDebugCoVisInfo.log();
+    };
+    Tools::Timer tTimer(FuncLogDebugCoVisInfo, "CoVis Whole", false ,&mDebugCoVisInfo.mTimeCostWhole);
     
     const TpFrameID nCurFrameID = fFrame.FrameID();
     int nCountKptsOnThisFrame = mFrameMatchResult.getCountKptsOnThisFrame();

@@ -40,7 +40,8 @@ typedef enum{
     EnNeedKF,
     EnLost,
     EnLoop,
-    EnReloc
+    EnReloc,
+    EnUnKnown
 }EnSLAMState;
 
 
