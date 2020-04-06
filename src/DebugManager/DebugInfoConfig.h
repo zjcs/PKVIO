@@ -36,14 +36,16 @@ public:
     int         mCountKptsRight;
     TpTimeStamp mTimeCost;
     int         mCountKptsMatch;
+    int         nCountMasterKptsWithM1vSn;
+    int         nCountSlaverKptsWithM1vSn;
     virtual const string str() const override {
         stringstream sStrStream;    
         const int mCountKptsUnduplicate = mCountKptsLeft+mCountKptsRight-mCountKptsMatch;
-        sStrStream  <<"MatchInfo - FrameID-M|S|MatchKpt|AllKpts|LKpt|RKpt|TimeCost:"<<endl
+        sStrStream  <<"MatchInfo - FrameID-M|S|MatchKpt|AllKpts|LKpt|RKpt|M1vSn|TimeCost:"<<endl
                     <<STR5BEGIN
                     <<mFrameIDMaster<<STR0l0SEP<<mFrameIDSlaver<<STR0l0SEP
                     <<mCountKptsMatch<<STR0l0SEP<<mCountKptsUnduplicate<<STR0l0SEP
-                    <<mCountKptsLeft<<STR0l0SEP<<mCountKptsRight<<STR0l0SEP
+                    <<mCountKptsLeft<<STR0l0SEP<<mCountKptsRight<<STR0l0SEP<<nCountMasterKptsWithM1vSn<<"v"<<nCountSlaverKptsWithM1vSn<<STR0l0SEP
                     <<mTimeCost<<"ms"<<endl;
         return sStrStream.str();
     }
@@ -85,6 +87,7 @@ class DebugKeyFrameGenerationInfo:public DebugInfoInterface
 {
 public:
     TpFrameID               mFrameID;
+    TpFrameID               mLastKeyFrameID;
     TpTimeStamp             mTimeCostWhole;
     TpTimeStamp             mTimeCostCountTrackedMapPoint;
     TpTimeStamp             mTimeCostAccFirstDetectedKptIDs;
@@ -101,7 +104,7 @@ public:
     virtual const string    str() const override {
         stringstream sStrStream;    
         sStrStream  <<"KeyFrameGenerate - FrameID | AccNewKptID | TrackedKptID | TrackedMapPoint | CreateNewMapPointID "<<endl
-                    << mStrKeyFrameGeneration << endl
+                    << mStrKeyFrameGeneration << " LastKeyFrameID: " << mLastKeyFrameID << endl
                     << STR5BEGIN <<mFrameID <<STR1l1SEP<<nCountFirstDetectedKptIDs << STR1l1SEP << nCountTrackedKptIDs << STR1l1SEP << nCountTrackedMapPoint 
                     << STR1l1SEP << nCountFirstDetectedKptIDToMapIDs  <<endl
                     << STR4BEGIN << "TimeCost-Whole|CountTrack|AccNewKptID|Generate|AddMeasurement:"<<endl

@@ -141,7 +141,7 @@ protected:
     TpDescriptorMatchResult     matchByKnn(const TpOneFrameKptDescriptor& fKptsDesc);
     TpDescriptorMatchResult     matchByBrutForceInWindow(const TpOneFrameKptDescriptor& fKptsDesc);
     
-    TpDescriptorMatchResult     removeDuplicatedMatch(const TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& mBestVecMatchResult);
+    TpDescriptorMatchResult     removeDuplicatedMatchM1vSn(const TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& mBestVecMatchResult);
     
     float                       distance(const cv::Mat& nDescA, const cv::Mat& nDescB);
 private:

@@ -33,6 +33,7 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
     mDebugKeyFrameGenerationInfo.nCountTrackedMapPoint  = nCountSumTrackKpts;
     //cout << "Track | L+R Match: "  << nCountSumTrackKpts << " | " << mFrameKptIDMgr.str() << endl;
     mDebugKeyFrameGenerationInfo.nCountFirstDetectedKptIDs          = mLstFirstDetectedKptIDBeforKF.size();
+    mDebugKeyFrameGenerationInfo.mLastKeyFrameID = mKeyFrameIDGenerator.getLastID();
     
     switch(eSLAMState){
         case EnNeedKF: 
@@ -44,6 +45,7 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
             break;
         default: ;
     }
+    return;
 }
 
 
@@ -127,7 +129,7 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
     
     // 
     
-    generateOneKeyFrame(fFrame);
+    TpKeyFrameID nNewKFID = generateOneKeyFrame(fFrame);
     
     
 }

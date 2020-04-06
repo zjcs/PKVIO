@@ -95,11 +95,12 @@ public:
 protected:
     EnSLAMState             updateTrackState(int nCountSumTrackKpts, int nCountKptsOnThisFrame);
     
-    inline void             generateOneKeyFrame(Type::Frame& fFrame){
+    inline TpKeyFrameID     generateOneKeyFrame(Type::Frame& fFrame){
                                 TpKeyFrameID nKFID = mKeyFrameIDGenerator.create();
                                 if(nKFID!=(int)mMapKFID2FrameID.size())
                                     throw;
                                 mMapKFID2FrameID.push_back(fFrame.FrameID());
+                                return nKFID;
                             }
                             
     void                    collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);

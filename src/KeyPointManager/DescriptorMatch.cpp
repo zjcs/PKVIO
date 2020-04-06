@@ -36,7 +36,7 @@ TpDescriptorMatchResult DescriptorMatch::match(const PKVIO::KeyPointManager::TpO
         case EnBrutForceInWindow: nMatResult = matchByBrutForceInWindow(fKptsDesc); break;
         default: throw;
     }
-    return removeDuplicatedMatch(fKptsDesc, nMatResult);
+    return removeDuplicatedMatchM1vSn(fKptsDesc, nMatResult);
 }
 
 TpDescriptorMatchResult DescriptorMatch::matchByKnn(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
@@ -168,11 +168,11 @@ bool DescriptorMatch::debugDuplicatedMatch(const Type::Frame& fFrame, const PKVI
 }
 
 
-TpDescriptorMatchResult DescriptorMatch::removeDuplicatedMatch(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& mBestVecMatchResult) 
+TpDescriptorMatchResult DescriptorMatch::removeDuplicatedMatchM1vSn(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& mBestVecMatchResult) 
 {
-    std::map<int, pair<int, float>> nMapDuplicatedKptIdx2MatchIdxAndDescDistance;
-    std::set<TpKeyPointIndex> nUniqueKptIdxLeft, nDuplicatedKptIdxLeft; int nSzDuplicated = 0;
-    for(int nIdxMatch = 0, nSzMatch = mBestVecMatchResult.getCountMatchKpts();nIdxMatch<nSzMatch;++nIdxMatch ){
+    std::set<TpKeyPointIndex> nUniqueKptIdxLeft, nDuplicatedKptIdxLeft; 
+    int nSzMatchKpts = mBestVecMatchResult.getCountMatchKpts(), nSzDuplicated = 0;
+    for(int nIdxMatch = 0, nSzMatch = nSzMatchKpts;nIdxMatch<nSzMatch;++nIdxMatch ){
         const auto& nMatch = mBestVecMatchResult.get()[nIdxMatch];
         TpKeyPointIndex nKptIdxLeft = nMatch.queryIdx;
         if(nUniqueKptIdxLeft.count(nKptIdxLeft)){
@@ -184,15 +184,65 @@ TpDescriptorMatchResult DescriptorMatch::removeDuplicatedMatch(const PKVIO::KeyP
     }
     nSzDuplicated+=nDuplicatedKptIdxLeft.size();
     
+    mDebugMatchInfo.nCountMasterKptsWithM1vSn = nDuplicatedKptIdxLeft.size();
+    mDebugMatchInfo.nCountSlaverKptsWithM1vSn = nSzDuplicated;
+    
     if(!nDuplicatedKptIdxLeft.size())
         return mBestVecMatchResult;
     
-    TpVecMatchResult nVecMatchResult; nVecMatchResult.resize(mBestVecMatchResult.getCountMatchKpts()-nSzDuplicated);
-    const auto& nOldVecMatchResult = mBestVecMatchResult.get();
-    std::copy_if(nOldVecMatchResult.cbegin(),nOldVecMatchResult.cend(),nVecMatchResult.begin(), [&](const TpOneMatchResult& r){
-        return !nDuplicatedKptIdxLeft.count(r.queryIdx);
-    });
-    mBestVecMatchResult = TpDescriptorMatchResult(mBestVecMatchResult, nVecMatchResult);
+    auto FuncRemoveMatchM1vSn = [&](){
+        TpVecMatchResult nVecMatchResultFinalUsed; nVecMatchResultFinalUsed.resize(nSzMatchKpts-nSzDuplicated);
+        const auto& nOldVecMatchResult = mBestVecMatchResult.get();
+        std::copy_if(nOldVecMatchResult.cbegin(),nOldVecMatchResult.cend(),nVecMatchResultFinalUsed.begin(), [&](const TpOneMatchResult& r){
+            return !nDuplicatedKptIdxLeft.count(r.queryIdx);
+        });
+        mBestVecMatchResult = TpDescriptorMatchResult(mBestVecMatchResult, nVecMatchResultFinalUsed);
+    };
+    
+    auto FuncReplaceMatchM1vSnTo1v1 = [&](){
+        vector<bool> vToFinalUsed(nSzMatchKpts, false);
+        std::map<int, pair<int, float>> nMapDuplicatedKptIdx2MatchIdxAndDescDistance;
+        map<TpKeyPointIndex, vector<int>> nM1KptIdx2DuplicatedMatchIdx;
+        for(int nIdxMatch = 0, nSzMatch = nSzMatchKpts;nIdxMatch<nSzMatch;++nIdxMatch ){
+            const auto& nMatch = mBestVecMatchResult.get()[nIdxMatch];
+            TpKeyPointIndex nKptIdxLeft = nMatch.queryIdx;
+            if(nDuplicatedKptIdxLeft.count(nKptIdxLeft)){
+                nM1KptIdx2DuplicatedMatchIdx[nKptIdxLeft].push_back(nIdxMatch);
+            }else{
+                vToFinalUsed[nIdxMatch] = true;
+            }
+        }
+        for(auto Iter=nM1KptIdx2DuplicatedMatchIdx.begin(),EndIter = nM1KptIdx2DuplicatedMatchIdx.end();Iter!=EndIter;++Iter){
+            const vector<int>& nVecDuplicatedMatchIdx = Iter->second;
+            
+            int   nMinDistanceDupMatchIdx = 0;
+            float fMinDistance = mBestVecMatchResult.get()[nVecDuplicatedMatchIdx[nMinDistanceDupMatchIdx]].distance;
+            for(int nDupMatchIdx=1,nSzDupMatch=nVecDuplicatedMatchIdx.size();nDupMatchIdx<nSzDupMatch;++nDupMatchIdx){
+                float fDupMatchDistance = mBestVecMatchResult.get()[nVecDuplicatedMatchIdx[nDupMatchIdx]].distance;
+                if(fMinDistance>fDupMatchDistance){
+                    nMinDistanceDupMatchIdx = nDupMatchIdx;
+                }
+            }
+            // find the best 1v1 in 1vn (master vs Slaver.)
+            vToFinalUsed[nVecDuplicatedMatchIdx[nMinDistanceDupMatchIdx]] = true;
+        }
+        
+        TpVecMatchResult nVecMatchResultFinalUsed;
+        nVecMatchResultFinalUsed.reserve(std::count(vToFinalUsed.begin(),vToFinalUsed.end(),true));
+        for(int nIdxMatch=0; nIdxMatch<nSzMatchKpts;++nIdxMatch){
+            if(vToFinalUsed[nIdxMatch]){
+                nVecMatchResultFinalUsed.push_back(mBestVecMatchResult.get()[nIdxMatch]);
+            }
+        }
+        mBestVecMatchResult = TpDescriptorMatchResult(mBestVecMatchResult, nVecMatchResultFinalUsed);
+    };
+    
+    // about 80 Left-Right match, 160 Prev-Cur match; bad match and track performance.
+    //FuncRemoveMatchM1vSn();
+    // about 250 Left-Right match, 350 Prev-Cur match; good match and track performance.
+    FuncReplaceMatchM1vSnTo1v1();
+    
+    
     return mBestVecMatchResult;
     
     /*
