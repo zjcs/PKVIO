@@ -26,6 +26,13 @@ namespace KeyFrameManager{
     
 class    MapPointIDManager {
 public:
+    inline bool     isExistingMapPointID(const TpKeyPointID& nKptID, TpMapPointID& nMapPointID){ 
+                        if((int)mMapFromKptID2MapPointID.size()>nKptID){
+                            nMapPointID = mMapFromKptID2MapPointID[nKptID] ;
+                            return nMapPointID !=INVALIDMAPPOINTID;
+                        }
+                        return false;
+                    }
     bool            isExistingMapPointID(const TpKeyPointID& nKptID){ 
                         //return std::count_if(mMapFromMapPointID2KptID.begin(), mMapFromMapPointID2KptID.end(), [=](TpMapPoint& mMapPoint){ return mMapPoint.getKeyPointID()==nKptID; }); 
                         return (int)mMapFromKptID2MapPointID.size()>nKptID&&mMapFromKptID2MapPointID[nKptID]!=INVALIDMAPPOINTID;
@@ -59,12 +66,12 @@ public:
                         }
                         return mMapFromMapPointID2KptID[mMapFromKptID2MapPointID[nKptID]];
                         
-                        auto Iter = std::find_if(mMapFromMapPointID2KptID.begin(), mMapFromMapPointID2KptID.end(), [=](TpMapPoint& mMapPoint){
-                            return mMapPoint.getKeyPointID()==nKptID;
-                        });                
-                        if(Iter == mMapFromMapPointID2KptID.end())
-                            throw;
-                        return *Iter;
+                        //auto Iter = std::find_if(mMapFromMapPointID2KptID.begin(), mMapFromMapPointID2KptID.end(), [=](TpMapPoint& mMapPoint){
+                        //    return mMapPoint.getKeyPointID()==nKptID;
+                        //});                
+                        //if(Iter == mMapFromMapPointID2KptID.end())
+                        //    throw;
+                        //return *Iter;
                     }
     
     
@@ -76,6 +83,46 @@ private:
     vector<TpMapPointID>                mMapFromKptID2MapPointID;
    //vector<> 
 };
+
+class TpKptIDMapPointPair{
+public:
+    TpKptIDMapPointPair(const TpKeyPointID nKptID, const TpKeyPointIndex nKptIndex,const TpMapPointID nMapPointID)
+    : mKptID(nKptID), mKptIndex(nKptIndex), mMapPointID(nMapPointID){}
+    TpKeyPointID    mKptID;
+    TpKeyPointIndex mKptIndex;
+    TpMapPointID    mMapPointID;
+};
+
+class TpKptIDMapPointPairWithFrameID: public TpKptIDMapPointPair {
+public:
+    TpKptIDMapPointPairWithFrameID(const TpFrameID nFrameID, const TpKeyPointID nKptID, const TpKeyPointIndex nKptIndex,const TpMapPointID nMapPointID):TpKptIDMapPointPair(nKptID, nKptIndex, nMapPointID), mFrameID(nFrameID){}
+    
+    TpFrameID       mFrameID;
+};
+
+class TpFrameKptIDMapPointPair{
+public:
+    TpFrameKptIDMapPointPair(const TpFrameID nFrameID):mFrameID(nFrameID), mVecFrameKptIDMapPointPair(){}
+    
+    inline void                         addKptIDMapPointPair(const TpKptIDMapPointPair& nKptIDMapPointPair){
+                                            mVecFrameKptIDMapPointPair.push_back(nKptIDMapPointPair);
+                                        }
+                                
+    inline vector<TpKeyPointID>         getKptIDs(void){
+                                            TpVecKeyPointID nVecKeyPointID;
+                                            nVecKeyPointID.reserve(mVecFrameKptIDMapPointPair.size());
+                                            for(int nIdxPair=0,nSzPairs = mVecFrameKptIDMapPointPair.size();nIdxPair<nSzPairs;++nIdxPair){
+                                                nVecKeyPointID.push_back(mVecFrameKptIDMapPointPair[nIdxPair].mKptID);
+                                            }
+                                            return nVecKeyPointID;
+                                        }
+    inline int                          size(void)const{return mVecFrameKptIDMapPointPair.size();}
+    inline const TpKptIDMapPointPair&   getKptIDMapPointPair(const int nIndexPair)const{return mVecFrameKptIDMapPointPair[nIndexPair];}
+protected:
+    TpFrameID                   mFrameID;
+    vector<TpKptIDMapPointPair> mVecFrameKptIDMapPointPair;
+};
+
    
 class KeyFrameManager
 {
@@ -91,6 +138,9 @@ public:
                             }
     
     int                     countTrackKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
+    
+    void                    getKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr,
+                                                          TpFrameKptIDMapPointPair& nFrameKptIDMapPointPair);
     
 protected:
     EnSLAMState             updateTrackState(int nCountSumTrackKpts, int nCountKptsOnThisFrame);

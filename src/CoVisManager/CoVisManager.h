@@ -29,7 +29,35 @@ public:
                                     //TODO: how to get current frame ID.
                                 }
     inline KeyPointManager::TpOneFrameIDManager& 
-                                getFrameKptIDMgr(const TpFrameID& nFrameID){ return mKeyPointIDManager.OneFrameIDManager(nFrameID); }
+                                OneFrameKptIDMgrByFrameID(const TpFrameID& nFrameID){ return mKeyPointIDManager.OneFrameIDManager(nFrameID); }
+                                
+    template<typename Func>
+    void                        collectCoVisInfo(const TpFrameID& nFrameID, Func f){
+        
+                                    auto pNodeCur               = mPtrCoVisGraph->getFrameByFrameID(nFrameID);
+                                    auto FuncVisitNode          = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
+                                        bool nbIsNodeCurFrame   = (pNodeFrom == nullptr);
+                                        //if(nbIsNodeCurFrame) {
+                                        //    return;   
+                                        //}
+                                        
+                                        //const TpFrameID nFrameIDCur = getFrameIDTemplate(pNode->getData());
+                                        const TpFrameID nFrameIDCur = nFrameID;
+                                        
+                                        const TpFrameID nFrameIDTo  = getFrameIDTemplate(pNodeTo->getData());
+                                        
+                                        TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
+                                        mKeyPointIDManager.getAllKptIDsAndIdexs(nFrameIDTo, nVecKptIDs, nVecKptIndexs);
+                                        f(nFrameIDTo, nVecKptIDs, nVecKptIndexs);
+                                    };
+                                    
+                                    auto FuncSkipNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
+                                        //const TpFrameID nFrameIDTo = pNodeTo->getData().FrameID();
+                                        return false;
+                                    };
+    
+                                    mPtrCoVisGraph->BreadthFristSearch(pNodeCur, 2, FuncVisitNode, FuncSkipNode);
+                                }
 protected:
     TpMapFrameID2FrameIndex     initFrameID2FrameIndexOfMatchResult(const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     

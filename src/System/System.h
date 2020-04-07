@@ -27,6 +27,8 @@ protected:
     void doexec(void);
     void exit(void);
 private:
+    cv::Matx44f solverCurrentFramePose(const TpFrameID nFrameIDCur);
+    
     void debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
 private:
     TpFuncDoExec mPtrFuncDoExec;

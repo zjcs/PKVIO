@@ -70,7 +70,7 @@ void System::runVIO() {
             mCoVisMgr.solve(mCurFrame, mFrameMatchResult);
             //cout << "CoVis Graph Finish." <<endl;
             
-            KeyPointManager::TpOneFrameIDManager& mOneFrameIDMgr = mCoVisMgr.getFrameKptIDMgr(mCurFrame.FrameID());
+            KeyPointManager::TpOneFrameIDManager& mOneFrameIDMgr = mCoVisMgr.OneFrameKptIDMgrByFrameID(mCurFrame.FrameID());
             mPtrKeyFrameMgr->solve(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
             
             debugCountTrackingKptIDWihtMapPointID(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
@@ -80,6 +80,8 @@ void System::runVIO() {
             }else{
                 
             }
+            
+            cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
             
             cv::Mat& mImgToShow = mCurFrame.Image();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
@@ -128,6 +130,46 @@ void System::debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const Ke
     nPrevCountKptIDsWithMapPoint = nCurCountKptIDsWithMapPoint;
 }
 
+cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
+    cv::Matx44f nFramePoseCur = cv::Matx44f::eye();
+    if(nFrameIDCur == 0)    // TODO Fist Frame, need try other way.
+        return nFramePoseCur;
+    
+    TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
+    KeyPointManager::TpOneFrameIDManager& nFrameIDManagerCur = mCoVisMgr.OneFrameKptIDMgrByFrameID(nFrameIDCur);
+    nFrameIDManagerCur.getAllKptIDsAndIdexs(nVecKptIDs, nVecKptIndexs);
+    
+    KeyFrameManager::TpFrameKptIDMapPointPair nFrameKptIDMapPointPair(nFrameIDCur);
+    mPtrKeyFrameMgr->getKptIDsWithMapPointID(nFrameIDManagerCur, nFrameKptIDMapPointPair);
+    
+    map<TpKeyPointID, TpMapPointID> nMapKeyPointID2MapPointID;
+    for(int nIdxPair=0,nSzPairs=nFrameKptIDMapPointPair.size();nIdxPair<nSzPairs;++nIdxPair){
+        const KeyFrameManager::TpKptIDMapPointPair& nPair = nFrameKptIDMapPointPair.getKptIDMapPointPair(nIdxPair);
+        nMapKeyPointID2MapPointID[nPair.mKptID] = nPair.mMapPointID;
+    }
+    vector<KeyFrameManager::TpKptIDMapPointPairWithFrameID> nVecKptIDMapPointPairWithFrameID;
+    
+    auto FuncGetCoVisWithCurrentFrame = [&](const TpFrameID nCosVisFrmID, 
+                                            const TpVecKeyPointID& nVecKptIDs, const TpVecKeyPointIndex& nVecKptIndexs){
+                                            for(int nIdxKptID=0,nSzKptIDs=nVecKptIDs.size();nIdxKptID<nSzKptIDs;++nIdxKptID){
+                                                const TpKeyPointID nKptID       = nVecKptIDs[nIdxKptID];
+                                                auto IterFind = nMapKeyPointID2MapPointID.find(nKptID);
+                                                if(IterFind == nMapKeyPointID2MapPointID.end())
+                                                    continue;
+                                                
+                                                // get one co-vis
+                                                const TpKeyPointIndex nKptIdex  = nVecKptIndexs[nIdxKptID];
+                                                KeyFrameManager::TpKptIDMapPointPairWithFrameID nOneMesurement(nCosVisFrmID, nKptID, nKptIdex, IterFind->second);
+                                                nVecKptIDMapPointPairWithFrameID.push_back(nOneMesurement);
+                                            }
+                                        };
+    mCoVisMgr.collectCoVisInfo(nFrameIDCur, FuncGetCoVisWithCurrentFrame);
+    
+    // Through nVecKptIDMapPointPairWithFrameID get measurment Info: camera pose 6D, keypoint pixel 2D, mapoint 3D.
+    // TODO
+    
+    return nFrameIDCur;
+}
 }
 
 }

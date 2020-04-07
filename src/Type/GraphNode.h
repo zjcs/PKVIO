@@ -110,7 +110,7 @@ const TpPtrNode     getNodeByIndex (const int nNodeIndexInGraph)const  {return m
 
 // nMaxDepth: -1 means no depth limitation, all node will be visited while 0 means no node will be visited.
 template<typename FuncVisit, typename FuncToSkipSpecifiedNode>
-void                widthSearchFirst(TpPtrNode pFistNode, int nMaxDepth, FuncVisit fVisit, FuncToSkipSpecifiedNode fSkip){
+void                BreadthFristSearch(TpPtrNode pFistNode, int nMaxDepth, FuncVisit fVisit, FuncToSkipSpecifiedNode fSkip){
     vector<bool> nVecFlagVisited(sizeNodeInGraph(), false);
     widthSearchFirst(nullptr, pFistNode, nMaxDepth, fVisit, fSkip, nVecFlagVisited);
 }

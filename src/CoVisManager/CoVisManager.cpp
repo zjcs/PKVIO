@@ -178,7 +178,7 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame) {
     auto FuncSkipNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
         return false;
     };
-    mPtrCoVisGraph->widthSearchFirst(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);
+    mPtrCoVisGraph->BreadthFristSearch(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);
 }
 
 void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const Type::TpVecFrameID& nVecFrameIDsDirectAdjoin) 
@@ -194,7 +194,6 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const 
         const TpFrameID nFrameIDTo  = getFrameIDTemplate(pNodeTo->getData());
         
         //cout << "add covis between "<< nFrameIDTo << "->" << nFrameIDCur << "..." <<endl;
-        
         // TODO: need optimize
         const int nSzCosVisKptIDs   = mKeyPointIDManager.sizeCoVisKptIDs(nFrameIDCur, nFrameIDTo);
         //if(nSzCosVisKptIDs>10)
@@ -208,7 +207,7 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const 
             return true;
         return false;
     };
-    mPtrCoVisGraph->widthSearchFirst(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);    
+    mPtrCoVisGraph->BreadthFristSearch(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);    
 }
 
 TpVecCoVisFrameIDs CoVisManager::getCoVisFrameIDs(const Type::TpFrameID nFrameIDQuery) const {

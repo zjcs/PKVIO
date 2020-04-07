@@ -151,5 +151,22 @@ int KeyFrameManager::countTrackKptIDsWithMapPointID(KeyPointManager::TpOneFrameI
     });
 }
 
+
+void KeyFrameManager::getKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr,
+                                                    TpFrameKptIDMapPointPair& nFrameKptIDMapPointPair) 
+{
+    TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
+    mFrameKptIDMgr.getAllKptIDsAndIdexs(nVecKptIDs, nVecKptIndexs);
+    
+    TpMapPointID                nMapPointID = INVALIDMAPPOINTID;
+    for(int nIdxKptId=0,nSzKptID=nVecKptIDs.size();nIdxKptId<nSzKptID;++nIdxKptId){
+        const TpKeyPointID      nKptID      = nVecKptIDs[nIdxKptId];
+        const TpKeyPointIndex   nKptIndex   = nVecKptIndexs[nIdxKptId];
+        if(mMapPointIDManager.isExistingMapPointID(nKptID)){
+            nFrameKptIDMapPointPair.addKptIDMapPointPair(TpKptIDMapPointPair(nKptID,nKptIndex,nMapPointID));
+        }
+    }
+}
+
 }
 }
