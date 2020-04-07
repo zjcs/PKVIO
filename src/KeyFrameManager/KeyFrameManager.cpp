@@ -20,6 +20,8 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
     mDebugKeyFrameGenerationInfo    = DebugManager::DebugKeyFrameGenerationInfo();
     //AutoLogTimer 
     
+    generateOneFrameCameraPose(fFrame);
+    
     //int nCountSumTrackKpts        = mFrameKptIDMgr.sizeKeyPointsWithID();
     int nCountSumTrackKpts          = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
     int nCountKptsOnThisFrame       = mFrameKptIDMgr.sizeKeyPoints();
@@ -158,11 +160,11 @@ void KeyFrameManager::getKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManag
     TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
     mFrameKptIDMgr.getAllKptIDsAndIdexs(nVecKptIDs, nVecKptIndexs);
     
-    TpMapPointID                nMapPointID = INVALIDMAPPOINTID;
     for(int nIdxKptId=0,nSzKptID=nVecKptIDs.size();nIdxKptId<nSzKptID;++nIdxKptId){
         const TpKeyPointID      nKptID      = nVecKptIDs[nIdxKptId];
         const TpKeyPointIndex   nKptIndex   = nVecKptIndexs[nIdxKptId];
-        if(mMapPointIDManager.isExistingMapPointID(nKptID)){
+        TpMapPointID            nMapPointID = INVALIDMAPPOINTID;
+        if(mMapPointIDManager.isExistingMapPointID(nKptID, nMapPointID)){
             nFrameKptIDMapPointPair.addKptIDMapPointPair(TpKptIDMapPointPair(nKptID,nKptIndex,nMapPointID));
         }
     }

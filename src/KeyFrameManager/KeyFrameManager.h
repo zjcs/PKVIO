@@ -56,6 +56,7 @@ public:
                     }
                     
     TpMapPoint&     MapPoint(const TpMapPointID nMapPointID){
+                        assert(nMapPointID < (int)mMapFromMapPointID2KptID.size());
                         return mMapFromMapPointID2KptID[nMapPointID];
                     }
                     
@@ -142,6 +143,17 @@ public:
     void                    getKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr,
                                                           TpFrameKptIDMapPointPair& nFrameKptIDMapPointPair);
     
+    MapPointIDManager&      getMapPointIDManager(void){return mMapPointIDManager;}
+    
+    inline const TpFrameID  getFrameID(const TpKeyFrameID nKeyFrameID)const{return mMapKFID2FrameID[nKeyFrameID];}
+    
+    TpPtrCameraPose         getKeyFrameCameraPose(const TpKeyFrameID nKeyFrameID){
+                                return mMapFrameID2CameraPose[getFrameID(nKeyFrameID)];
+                            }
+                            
+    TpPtrCameraPose         getFrameCameraPose(const TpFrameID nFrameID){
+                                return mMapFrameID2CameraPose[nFrameID];
+                            }
 protected:
     EnSLAMState             updateTrackState(int nCountSumTrackKpts, int nCountKptsOnThisFrame);
     
@@ -155,10 +167,21 @@ protected:
                             
     void                    collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
     
+    inline void             generateOneFrameCameraPose(Type::Frame& fFrame){
+                                assert(fFrame.FrameID() == (int)mMapFrameID2CameraPose.size());
+                                TpPtrCameraPose nPtrCameraPose;
+                                if(mMapFrameID2CameraPose.size()==0){
+                                    nPtrCameraPose = std::make_shared<TpCameraPose>(cv::Matx44f::eye());
+                                }else{
+                                    
+                                }
+                                mMapFrameID2CameraPose.push_back(nPtrCameraPose);
+                            }
 private:
     MapPointIDManager                   mMapPointIDManager;
     Type::IDGenerator<TpKeyFrameID>     mKeyFrameIDGenerator;
     vector<TpFrameID>                   mMapKFID2FrameID;
+    vector<TpPtrCameraPose>             mMapFrameID2CameraPose;
     
     list<TpKeyPointID>                  mLstFirstDetectedKptIDBeforKF;
 private:

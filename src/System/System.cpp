@@ -3,6 +3,8 @@
 #include "System.h"
 #include "../DatasetManager/DatasetEuRoc.h"
 #include "../Tools/Tools.h"
+#include "../Solver/Solver.h"
+
 
 
 namespace PKVIO {
@@ -147,6 +149,7 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         const KeyFrameManager::TpKptIDMapPointPair& nPair = nFrameKptIDMapPointPair.getKptIDMapPointPair(nIdxPair);
         nMapKeyPointID2MapPointID[nPair.mKptID] = nPair.mMapPointID;
     }
+    
     vector<KeyFrameManager::TpKptIDMapPointPairWithFrameID> nVecKptIDMapPointPairWithFrameID;
     
     auto FuncGetCoVisWithCurrentFrame = [&](const TpFrameID nCosVisFrmID, 
@@ -165,8 +168,50 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
                                         };
     mCoVisMgr.collectCoVisInfo(nFrameIDCur, FuncGetCoVisWithCurrentFrame);
     
+    // Another way is (1)get all MapPointIDs in Current Frame, (2) get all measurments stored in TpMapPoint
+    //      how to solve the measurment from non-keyframe, directly added in TpMapPoint, which still is not done in runVIO?
+    
     // Through nVecKptIDMapPointPairWithFrameID get measurment Info: camera pose 6D, keypoint pixel 2D, mapoint 3D.
     // TODO
+    map<TpFrameID, TpPtrCameraPose> nMapFrameID2CameraPose;
+    map<TpMapPointID, TpPtrMapPoint3D> nMapMapPointID2MapPoint3D;
+    
+    for(int nIdxMeasurement=0,nSzMeasurements = nVecKptIDMapPointPairWithFrameID.size();nIdxMeasurement<nSzMeasurements;++nIdxMeasurement){
+        auto& nMeasurement = nVecKptIDMapPointPairWithFrameID[nIdxMeasurement];
+        if(nMapFrameID2CameraPose.find(nMeasurement.mFrameID) == nMapFrameID2CameraPose.end()){
+            nMapFrameID2CameraPose[nMeasurement.mFrameID] = mPtrKeyFrameMgr->getFrameCameraPose(nMeasurement.mFrameID);
+        }
+        if(nMapMapPointID2MapPoint3D.find(nMeasurement.mMapPointID) == nMapMapPointID2MapPoint3D.end()){
+            //nMapMapPointID2MapPoint3D[nMeasurement.mMapPointID] = TpMapPoint3D();
+            nMapMapPointID2MapPoint3D[nMeasurement.mMapPointID] = 
+            mPtrKeyFrameMgr->getMapPointIDManager().MapPoint(nMeasurement.mMapPointID).getMapPoint3D();
+        }
+    }
+    
+    Solver::Solver nSolverCurFramePose;
+    nSolverCurFramePose.initCamerPoses(nMapFrameID2CameraPose);
+    nSolverCurFramePose.initMapPoints(nMapMapPointID2MapPoint3D);
+    
+    for(int nIdxMeasurement=0,nSzMeasurements = nVecKptIDMapPointPairWithFrameID.size();nIdxMeasurement<nSzMeasurements;++nIdxMeasurement){
+        auto& nMeasurement = nVecKptIDMapPointPairWithFrameID[nIdxMeasurement];
+        TpFrameID nFrameID = nMeasurement.mFrameID;
+        if(mKeyPointMgr.getFrameKptsDescriptorHistory().isExisting(nFrameID)){
+            
+            cv::KeyPoint nKeyPoint = mKeyPointMgr.getFrameKptsDescriptorHistory().get(nFrameID).mKeyPointsLeft[nMeasurement.mKptIndex];
+            //TpMapPoint3D nMapPoint = mPtrKeyFrameMgr->getMapPointIDManager().MapPoint(nMeasurement.mMapPointID).MapPoint3D();
+            
+            Solver::TpVisualMeasurement nVisualMeasurement;
+            nVisualMeasurement.mFrameID = nFrameID;
+            nVisualMeasurement.mKeyPoint = nKeyPoint;
+            nVisualMeasurement.mMapPointID = nMeasurement.mMapPointID;
+            nSolverCurFramePose.addMeasurement(nVisualMeasurement);
+        }else{
+            cout << "Error: FrameKptsDescriptorHistory has been freed, FrameID:" << nFrameID<<endl;
+            throw;
+        }
+    }
+    
+    nSolverCurFramePose.solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D);
     
     return nFrameIDCur;
 }

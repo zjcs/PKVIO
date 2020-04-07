@@ -12,12 +12,19 @@ namespace KeyFrameManager
     class TpMapPoint
     {
     public:
-        TpMapPoint(TpKeyPointID nKptID):mKptID(nKptID){}
-        inline void             addMeasurement(TpFrameID nFrameID, TpKeyPointIndex nKptIndex){ mVecMeasurements.push_back(std::make_pair(nFrameID, nKptIndex)); }
+        TpMapPoint(TpKeyPointID nKptID):mKptID(nKptID), mMapPoint3D(std::make_shared<TpMapPoint3D>())
+        {}
+        
+        inline void             addMeasurement(TpFrameID nFrameID, TpKeyPointIndex nKptIndex){
+                                    mVecMeasurements.push_back(std::make_pair(nFrameID, nKptIndex)); 
+                                }
+                                
         inline TpKeyPointID     getKeyPointID(void){return mKptID;}
+        
+        TpPtrMapPoint3D         getMapPoint3D(void){return mMapPoint3D;}
     private:
-        cv::Point3f     mMapPoint3D;
-        TpKeyPointID    mKptID;
+        TpPtrMapPoint3D         mMapPoint3D;
+        TpKeyPointID            mKptID;
         vector<pair<TpFrameID, TpKeyPointIndex>>    mVecMeasurements;
     };
     

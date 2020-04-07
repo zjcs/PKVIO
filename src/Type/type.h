@@ -23,8 +23,9 @@ using namespace PKVIO::GraphNode;
 using namespace PKVIO::IDGenerator;
    
 
-typedef     std::vector<cv::KeyPoint>   TpVecKeyPoints;
-typedef     cv::Mat                     TpVecDescriptor;
+typedef cv::KeyPoint                    TpKeyPoint;
+typedef std::vector<cv::KeyPoint>       TpVecKeyPoints;
+typedef cv::Mat                         TpVecDescriptor;
 
 typedef cv::DMatch                      TpOneMatchResult;
 typedef vector<cv::DMatch>              TpVecMatchResult;
@@ -33,6 +34,9 @@ typedef vector<TpMatchPair>             TpVecMatchPairs;
 
 typedef int                             TpMapPointID;
 extern const TpMapPointID               INVALIDMAPPOINTID;
+
+typedef cv::Point3f                     TpMapPoint3D;
+typedef std::shared_ptr<cv::Point3f>    TpPtrMapPoint3D;
 
 
 typedef enum{

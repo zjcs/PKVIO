@@ -3,6 +3,7 @@
 
 #include <map>
 #include <set>
+#include <memory>
 
 using namespace std;
 
@@ -84,6 +85,22 @@ public:
 protected:
     cv::Mat                     mImageRight;
 };
+
+class TpCameraPose
+{
+public:
+    TpCameraPose(const cv::Matx44f& nT){setMatx44f(nT);}
+    
+    void                setMatx44f(const cv::Matx44f& nT){mPoseMatx44f = nT;}
+    
+    cv::Matx44f&        Matx44f(void){return mPoseMatx44f;}
+    const cv::Matx44f&  getMatx44f(void)const{return mPoseMatx44f;}
+    
+private:
+    cv::Matx44f     mPoseMatx44f;
+};
+
+typedef std::shared_ptr<TpCameraPose> TpPtrCameraPose;
  
 }
 }
