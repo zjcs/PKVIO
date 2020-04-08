@@ -9,12 +9,14 @@ namespace Solver
 {
     class TpVisualMeasurement{
     public:
-        TpFrameID       mFrameID;
-        TpMapPointID    mMapPointID;
+        TpFrameID           mFrameID;
+        TpMapPointID        mMapPointID;
         
-        TpKeyPoint      mKeyPoint;
-        TpPtrMapPoint3D    mMapPoint3D;
+        TpKeyPoint          mKeyPoint;
+        TpPtrMapPoint3D     mMapPoint3D;
     };
+    
+    typedef vector<TpVisualMeasurement> TpVecVisualMeasurement;
     
     class Solver {
     public:
@@ -22,7 +24,7 @@ namespace Solver
         void initCamerPoses(const map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose);
         void initMapPoints(const map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D);
         void addMeasurement(const TpVisualMeasurement& nVisualMeasurement);
-        void solve(map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose, map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D);
+        void solve(map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose, map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D, const TpVecVisualMeasurement& nVecVisualMeasurement);
     protected:
         void initialization(void);
     };

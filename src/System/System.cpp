@@ -173,8 +173,9 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     
     // Through nVecKptIDMapPointPairWithFrameID get measurment Info: camera pose 6D, keypoint pixel 2D, mapoint 3D.
     // TODO
-    map<TpFrameID, TpPtrCameraPose> nMapFrameID2CameraPose;
-    map<TpMapPointID, TpPtrMapPoint3D> nMapMapPointID2MapPoint3D;
+    map<TpFrameID, TpPtrCameraPose>     nMapFrameID2CameraPose;
+    map<TpMapPointID, TpPtrMapPoint3D>  nMapMapPointID2MapPoint3D;
+    Solver::TpVecVisualMeasurement      nVecVisualMeasurement;
     
     for(int nIdxMeasurement=0,nSzMeasurements = nVecKptIDMapPointPairWithFrameID.size();nIdxMeasurement<nSzMeasurements;++nIdxMeasurement){
         auto& nMeasurement = nVecKptIDMapPointPairWithFrameID[nIdxMeasurement];
@@ -189,8 +190,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     }
     
     Solver::Solver nSolverCurFramePose;
-    nSolverCurFramePose.initCamerPoses(nMapFrameID2CameraPose);
-    nSolverCurFramePose.initMapPoints(nMapMapPointID2MapPoint3D);
+    //nSolverCurFramePose.initCamerPoses(nMapFrameID2CameraPose);
+    //nSolverCurFramePose.initMapPoints(nMapMapPointID2MapPoint3D);
     
     for(int nIdxMeasurement=0,nSzMeasurements = nVecKptIDMapPointPairWithFrameID.size();nIdxMeasurement<nSzMeasurements;++nIdxMeasurement){
         auto& nMeasurement = nVecKptIDMapPointPairWithFrameID[nIdxMeasurement];
@@ -204,14 +205,15 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
             nVisualMeasurement.mFrameID = nFrameID;
             nVisualMeasurement.mKeyPoint = nKeyPoint;
             nVisualMeasurement.mMapPointID = nMeasurement.mMapPointID;
-            nSolverCurFramePose.addMeasurement(nVisualMeasurement);
+            //nSolverCurFramePose.addMeasurement(nVisualMeasurement);
+            nVecVisualMeasurement.push_back(nVisualMeasurement);
         }else{
             cout << "Error: FrameKptsDescriptorHistory has been freed, FrameID:" << nFrameID<<endl;
             throw;
         }
     }
     
-    nSolverCurFramePose.solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D);
+    nSolverCurFramePose.solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D, nVecVisualMeasurement);
     
     return nFrameIDCur;
 }
