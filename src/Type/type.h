@@ -12,6 +12,7 @@
 #include "FixLengthQueue.h"
 #include "DataHistoryTemplate.h"
 #include "KeyFrameNonKeyFrame.h"
+#include "Camera.h"
 
 using namespace std;
 

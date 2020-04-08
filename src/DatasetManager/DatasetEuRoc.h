@@ -4,6 +4,7 @@
 #include "DatasetOfflineImp.h"
 #include <string>
 #include <opencv/cv.h>
+#include "../Type/Camera.h"
 
 using namespace std;
 
@@ -33,13 +34,16 @@ private:
     void              parseDatasetTimeStamp(void);
     
     void              parseCalibration(void);
-    void              parseCalibrationCamera(const string& sCameraCalibFile);
     void              parseCalibrationIMU(const string& sIMUCalibFile);
-    void              buildCalibration(void);
+    
+protected:
+    void              parseCalibrationCamera(const string& sCameraCalibFile, TpCameraInnerParam& nCameraInnerParam, TpCameraDistorParam& nCameraDistorParam, TpCameraOuterParam& nCameraOuterParam);
 private:
     typedef pair<TpTimeStamp, cv::Vec6d>        TpInputIMU;
     vector<TpTimeStamp>                         mVecImageTimeStamp;
     vector<TpInputIMU>                          mVecIMUTimeStamp;
+    
+    Type::TpPtrCameraStereo                     mPtrCameraStereo;
 };
 }
 }
