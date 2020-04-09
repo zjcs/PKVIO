@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <memory>
+#include "Convertor.h"
 
 using namespace std;
 
@@ -90,11 +91,14 @@ class TpCameraPose
 {
 public:
     TpCameraPose(const cv::Matx44f& nT){setMatx44f(nT);}
+    TpCameraPose(const TpCameraPose& nT){setMatx44f(nT.getMatx44f());}
     
     void                setMatx44f(const cv::Matx44f& nT){mPoseMatx44f = nT;}
     
     cv::Matx44f&        Matx44f(void){return mPoseMatx44f;}
     const cv::Matx44f&  getMatx44f(void)const{return mPoseMatx44f;}
+    
+    cv::Vec3f           getPosition(void){ return Type::cvtMatx44fToPosition(getMatx44f()); }
     
 private:
     cv::Matx44f     mPoseMatx44f;

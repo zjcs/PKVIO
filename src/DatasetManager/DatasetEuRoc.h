@@ -17,7 +17,7 @@ public:
     virtual void                        initialize(void) override;
     virtual Frame*                      load(const int nIndexToRead) override;
     virtual TpDatasetType               type(void) override {return TpOfflineEuRoc;};
-    virtual const TpPtrCameraStereo     getCamera(void)const override{return mPtrCameraStereo;}
+    virtual const TpPtrCameraStereo     getPtrCamera(void)const override{return mPtrCameraStereo;}
     
 protected:
     virtual inline const TpTimeStamp&   getFrameTimeStamp(TpFrameIndex nFrmIndex){return mVecImageTimeStamp[nFrmIndex];}

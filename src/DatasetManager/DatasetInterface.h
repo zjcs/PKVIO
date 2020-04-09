@@ -32,7 +32,7 @@ namespace DatasetManager{
 
         TpFrameID GeneratorFrameID(void){ return mIDGenerator.create(); }
         
-        virtual const TpPtrCameraStereo     getCamera(void)const = 0;
+        virtual const TpPtrCameraStereo     getPtrCamera(void)const = 0;
     private:
         FrameIDGenerator mIDGenerator;
     };

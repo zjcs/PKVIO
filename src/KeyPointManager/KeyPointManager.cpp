@@ -190,14 +190,14 @@ cv::Mat KeyPointManager::showMatchResult(const Type::TpFrameID nFrameIDStereo) {
     TpDescriptorMatchResult nDescriptorsMatchResult;
     if(!getTrackingKptDescriptorMatchResult(nFrameIDStereo,nFrameIDStereo, nFrameKptDescriptorStereo, nDescriptorsMatchResult))
         return cv::Mat();
-    return showMatchResult(nFrameKptDescriptorStereo, nDescriptorsMatchResult, "Match:L|R-"+Type::toString(nFrameIDStereo));
+    return showMatchResult(nFrameKptDescriptorStereo, nDescriptorsMatchResult, "Match:L|R-"+Type::cvtToString(nFrameIDStereo));
 }
 
 cv::Mat KeyPointManager::showMatchResult(const Type::TpFrameID nFrameIDMaster, const Type::TpFrameID nFrameIDSlaver, bool bShow) {
     TpOneFrameKptDescriptor nFrameKptDescriptorPrevCur;
     TpDescriptorMatchResult nDescriptorsMatchResult;
     getTrackingKptDescriptorMatchResult(nFrameIDMaster, nFrameIDSlaver,nFrameKptDescriptorPrevCur, nDescriptorsMatchResult);
-    return showMatchResult(nFrameKptDescriptorPrevCur, nDescriptorsMatchResult, "Match:M|S-"+Type::toString(nFrameIDMaster)+"|"+toString(nFrameIDSlaver));
+    return showMatchResult(nFrameKptDescriptorPrevCur, nDescriptorsMatchResult, "Match:M|S-"+Type::cvtToString(nFrameIDMaster)+"|"+cvtToString(nFrameIDSlaver));
 }
 
 bool KeyPointManager::getTrackingKptDescriptorMatchResult(const Type::TpFrameID nFrameIDMaster, const Type::TpFrameID nFrameIDSlaver, PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& nMatchResult) 

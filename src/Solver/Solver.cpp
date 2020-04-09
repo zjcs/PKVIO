@@ -45,10 +45,6 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
                    std::map<Type::TpMapPointID, Type::TpPtrMapPoint3D >& nMapMapPointID2MapPoint3D,
                    const TpVecVisualMeasurement& nVecVisualMeasurement, const TpPtrCameraStereo nPtrCameraStereo) 
 {
-    return;
-    // need read camera calib and undistor keypoint function;
-    throw;
-    
     int     nIterations = 10;
     bool    bRobust     = true;
     const float thHuber2D = sqrt(5.99);
@@ -73,7 +69,7 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         const TpFrameID nFrameID        = Iter->first;
         TpPtrCameraPose nPtrCameraPose  = Iter->second;
         
-         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
+        g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Converter::toSE3Quat(cv::Mat(nPtrCameraPose->getMatx44f())));
         vSE3->setFixed(nFrameID==0);
         vSE3->setId(nFrameID);
@@ -96,10 +92,8 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
     for(auto Iter=nVecVisualMeasurement.begin(),EndIter=nVecVisualMeasurement.end();Iter!=EndIter;++Iter){
         const TpVisualMeasurement& nVisualMeasurement = *Iter;
         const TpKeyPoint&          nKeyPoint = nVisualMeasurement.mKeyPoint;
-        
         // undistor;
         TpKeyPoint nKeyPointUndistor = nKeyPoint;
-        throw;
         
         Eigen::Matrix<double,2,1> obs;
         obs << nKeyPointUndistor.pt.x, nKeyPointUndistor.pt.y;

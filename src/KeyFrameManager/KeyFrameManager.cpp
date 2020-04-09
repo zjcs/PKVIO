@@ -6,6 +6,10 @@ namespace PKVIO
 namespace KeyFrameManager
 {
     
+float RandomData(){
+    float rd = (rand()%1000*1.0/1000);
+    return rd;
+}
     
     
 

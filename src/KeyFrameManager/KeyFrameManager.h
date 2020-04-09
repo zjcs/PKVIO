@@ -152,6 +152,9 @@ public:
                             }
                             
     TpPtrCameraPose         getFrameCameraPose(const TpFrameID nFrameID){
+                                if(nFrameID >= mMapFrameID2CameraPose.size()){
+                                    cout << "Error: no Camera Pose is found for FrameID:" << nFrameID <<endl;
+                                }
                                 return mMapFrameID2CameraPose[nFrameID];
                             }
 protected:
@@ -173,8 +176,9 @@ protected:
                                 if(mMapFrameID2CameraPose.size()==0){
                                     nPtrCameraPose = std::make_shared<TpCameraPose>(cv::Matx44f::eye());
                                 }else{
-                                    
+                                    nPtrCameraPose = std::make_shared<TpCameraPose>(*mMapFrameID2CameraPose.back());
                                 }
+                                cout << "Genera one Camera Pose for FrameID:" << fFrame.FrameID() <<endl;
                                 mMapFrameID2CameraPose.push_back(nPtrCameraPose);
                             }
 private:

@@ -159,7 +159,7 @@ void DatasetEuRoc::parseCalibration() {
     parseCalibrationCamera(sRightCalibFile, nCameraInnerParamRight, nCameraOuterParamRight);
     mPtrCameraStereo->CameraRight() = Camera(nCameraInnerParamRight);
     
-    cout << "Info: here is need test. Not sure it's right." << endl;
+    cout << "Info: [EuRoc Camera Outer Param] here is need test. Not sure it's right." << endl;
     mPtrCameraStereo->setCameraOuterParamCvtPtLViewToRView(nCameraOuterParamLeft.get().t()*nCameraOuterParamRight.get());
     
     //imu

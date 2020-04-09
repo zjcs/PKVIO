@@ -83,19 +83,17 @@ void System::runVIO() {
                 
             }
             
-            //cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
+            cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
             
             cv::Mat mImgToShow = mCurFrame.Image().clone();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
                 KeyPointManager::TpOneFrameKptDescriptor& CurFrmKptsDescriptor = mKeyPointMgr.getDescriptor(mCurFrame.FrameID());
                 mImgToShow = Tools::drawKeyPoints(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft);
-                const Camera& nCameraLeft = mPtrDataset->getCamera()->getCameraLeft();
+                const Camera& nCameraLeft = mPtrDataset->getPtrCamera()->getCameraLeft();
                 cv::Mat nImgUndistorLeft = nCameraLeft.getCameraInnerParam().undistor(mCurFrame.Image());
                 TpVecKeyPoints nVecKptUndistort = nCameraLeft.getCameraInnerParam().undistor(CurFrmKptsDescriptor.mKeyPointsLeft);
-                nImgUndistorLeft = Tools::drawKeyPoints(nImgUndistorLeft, nVecKptUndistort);
-                cv::imshow("Undistor", nImgUndistorLeft);
-                cv::waitKey(1);
                 
+                Tools::drawMatch(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft, nImgUndistorLeft, nVecKptUndistort, false, "Distor|Undistor");
             }
             if(!mImgToShow.empty()){
                 cv::imshow("Viewer", mImgToShow);
@@ -118,7 +116,8 @@ void System::debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const Ke
     } else {
         if(nCurCountKptIDsWithMapPoint>nPrevCountKptIDsWithMapPoint) {
             
-            cout << "**** Error: Match Point number should decreas... Prev|Cur - " << nPrevCountKptIDsWithMapPoint <<" | " << nCurCountKptIDsWithMapPoint << endl;
+            cout << "**** Error: Match Point number should decreas... Prev|Cur - " << nPrevCountKptIDsWithMapPoint 
+                 << " | " << nCurCountKptIDsWithMapPoint << endl;
             
             TpFrameID nFrameIDPre2 = fFrame.FrameID()-2, nFrameIDPrev = fFrame.FrameID()-1, nFrameIDCur = fFrame.FrameID();
             
@@ -196,7 +195,7 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         }
     }
     
-    Type::TpPtrCameraStereo nPtrCameraStereo = mPtrDataset->getCamera();
+    Type::TpPtrCameraStereo nPtrCameraStereo = mPtrDataset->getPtrCamera();
     
     Solver::Solver nSolverCurFramePose;
     //nSolverCurFramePose.initCamerPoses(nMapFrameID2CameraPose);
@@ -209,11 +208,14 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
             
             cv::KeyPoint nKeyPoint = mKeyPointMgr.getFrameKptsDescriptorHistory().get(nFrameID).mKeyPointsLeft[nMeasurement.mKptIndex];
             //TpMapPoint3D nMapPoint = mPtrKeyFrameMgr->getMapPointIDManager().MapPoint(nMeasurement.mMapPointID).MapPoint3D();
+            cv::KeyPoint nKeyPointUnDistor = mPtrDataset->getPtrCamera()->CameraLeft().getCameraInnerParam().undistor(nKeyPoint);
             
             Solver::TpVisualMeasurement nVisualMeasurement;
-            nVisualMeasurement.mFrameID = nFrameID;
-            nVisualMeasurement.mKeyPoint = nKeyPoint;
-            nVisualMeasurement.mMapPointID = nMeasurement.mMapPointID;
+            nVisualMeasurement.mFrameID     = nFrameID;
+            nVisualMeasurement.mMapPointID  = nMeasurement.mMapPointID;
+            //nVisualMeasurement.mKeyPoint  = nKeyPoint;
+            nVisualMeasurement.mKeyPoint    =  nKeyPointUnDistor;
+            
             //nSolverCurFramePose.addMeasurement(nVisualMeasurement);
             nVecVisualMeasurement.push_back(nVisualMeasurement);
         }else{
@@ -223,8 +225,14 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     }
     
     nSolverCurFramePose.solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D, nVecVisualMeasurement, nPtrCameraStereo);
+    auto nPtrCameraPoseCur = nMapFrameID2CameraPose[nFrameIDCur];
+    nFramePoseCur = nPtrCameraPoseCur->getMatx44f();
+    //cout << "nFramePoseCur:" << nFrameIDCur <<endl << nFramePoseCur <<endl;
+    cout    << "nFramePoseCur | nCosVisFrm | nMeasurement - "
+            << nFrameIDCur << " | " << nMapFrameID2CameraPose.size() << " | " << nVecVisualMeasurement.size() <<endl 
+            << nPtrCameraPoseCur->getPosition() <<endl;
     
-    return nFrameIDCur;
+    return nFramePoseCur;
 }
 }
 

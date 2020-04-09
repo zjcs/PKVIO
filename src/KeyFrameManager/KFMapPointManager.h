@@ -8,11 +8,11 @@ namespace PKVIO
 {
 namespace KeyFrameManager
 {
-    
+    float RandomData();
     class TpMapPoint
     {
     public:
-        TpMapPoint(TpKeyPointID nKptID):mKptID(nKptID), mMapPoint3D(std::make_shared<TpMapPoint3D>())
+        TpMapPoint(TpKeyPointID nKptID):mKptID(nKptID), mMapPoint3D(std::make_shared<TpMapPoint3D>(cv::Point3f(RandomData(),RandomData(),RandomData())))
         {}
         
         inline void             addMeasurement(TpFrameID nFrameID, TpKeyPointIndex nKptIndex){

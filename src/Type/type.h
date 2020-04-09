@@ -13,6 +13,7 @@
 #include "DataHistoryTemplate.h"
 #include "KeyFrameNonKeyFrame.h"
 #include "Camera.h"
+#include "Convertor.h"
 
 using namespace std;
 
@@ -53,7 +54,7 @@ typedef enum{
 namespace TypeConvertor
 {
     
-template<typename T> string             toString(T& t)
+template<typename T> string             cvtToString(T& t)
 {
     stringstream sStrStream;
     sStrStream<<t;
