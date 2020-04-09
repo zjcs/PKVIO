@@ -31,6 +31,8 @@ namespace DatasetManager{
         virtual FrameInfo getFrameInfor(const TpFrameID nFrmID){ return FrameInfo(); }
 
         TpFrameID GeneratorFrameID(void){ return mIDGenerator.create(); }
+        
+        virtual const TpPtrCameraStereo     getCamera(void)const = 0;
     private:
         FrameIDGenerator mIDGenerator;
     };

@@ -83,12 +83,19 @@ void System::runVIO() {
                 
             }
             
-            cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
+            //cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
             
-            cv::Mat& mImgToShow = mCurFrame.Image();
+            cv::Mat mImgToShow = mCurFrame.Image().clone();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
                 KeyPointManager::TpOneFrameKptDescriptor& CurFrmKptsDescriptor = mKeyPointMgr.getDescriptor(mCurFrame.FrameID());
                 mImgToShow = Tools::drawKeyPoints(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft);
+                const Camera& nCameraLeft = mPtrDataset->getCamera()->getCameraLeft();
+                cv::Mat nImgUndistorLeft = nCameraLeft.getCameraInnerParam().undistor(mCurFrame.Image());
+                TpVecKeyPoints nVecKptUndistort = nCameraLeft.getCameraInnerParam().undistor(CurFrmKptsDescriptor.mKeyPointsLeft);
+                nImgUndistorLeft = Tools::drawKeyPoints(nImgUndistorLeft, nVecKptUndistort);
+                cv::imshow("Undistor", nImgUndistorLeft);
+                cv::waitKey(1);
+                
             }
             if(!mImgToShow.empty()){
                 cv::imshow("Viewer", mImgToShow);
@@ -189,6 +196,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         }
     }
     
+    Type::TpPtrCameraStereo nPtrCameraStereo = mPtrDataset->getCamera();
+    
     Solver::Solver nSolverCurFramePose;
     //nSolverCurFramePose.initCamerPoses(nMapFrameID2CameraPose);
     //nSolverCurFramePose.initMapPoints(nMapMapPointID2MapPoint3D);
@@ -213,7 +222,7 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         }
     }
     
-    nSolverCurFramePose.solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D, nVecVisualMeasurement);
+    nSolverCurFramePose.solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D, nVecVisualMeasurement, nPtrCameraStereo);
     
     return nFrameIDCur;
 }

@@ -14,9 +14,10 @@ class DatasetEuRoc: public DatasetOfflineImp{
 public: 
     DatasetEuRoc(const string& sDatasetPath);
     
-    virtual void      initialize(void) override;
-    virtual Frame*    load(const int nIndexToRead) override;
-    virtual TpDatasetType       type(void) override {return TpOfflineEuRoc;};
+    virtual void                        initialize(void) override;
+    virtual Frame*                      load(const int nIndexToRead) override;
+    virtual TpDatasetType               type(void) override {return TpOfflineEuRoc;};
+    virtual const TpPtrCameraStereo     getCamera(void)const override{return mPtrCameraStereo;}
     
 protected:
     virtual inline const TpTimeStamp&   getFrameTimeStamp(TpFrameIndex nFrmIndex){return mVecImageTimeStamp[nFrmIndex];}
@@ -37,7 +38,8 @@ private:
     void              parseCalibrationIMU(const string& sIMUCalibFile);
     
 protected:
-    void              parseCalibrationCamera(const string& sCameraCalibFile, TpCameraInnerParam& nCameraInnerParam, TpCameraDistorParam& nCameraDistorParam, TpCameraOuterParam& nCameraOuterParam);
+    void              parseCalibrationCamera(const string& sCameraCalibFile, TpCameraInnerParam& nCameraInnerParam,
+                                             TpCameraOuterParam& nCameraOuterParam);
 private:
     typedef pair<TpTimeStamp, cv::Vec6d>        TpInputIMU;
     vector<TpTimeStamp>                         mVecImageTimeStamp;

@@ -24,7 +24,7 @@ namespace Solver
         void initCamerPoses(const map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose);
         void initMapPoints(const map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D);
         void addMeasurement(const TpVisualMeasurement& nVisualMeasurement);
-        void solve(map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose, map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D, const TpVecVisualMeasurement& nVecVisualMeasurement);
+        void solve(map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose, map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D, const TpVecVisualMeasurement& nVecVisualMeasurement, const TpPtrCameraStereo nPtrCameraStereo);
     protected:
         void initialization(void);
     };

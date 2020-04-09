@@ -149,15 +149,15 @@ void DatasetEuRoc::parseCalibration() {
     mPtrCameraStereo = std::make_shared<CameraStereo>();
     //left
     string sLeftCalibFile = getLeftViewFolder() + "/sensor.yaml";
-    TpCameraInnerParam nCameraInnerParamLeft; TpCameraDistorParam nCameraDistorParamLeft; TpCameraOuterParam nCameraOuterParamLeft;
-    parseCalibrationCamera(sLeftCalibFile, nCameraInnerParamLeft, nCameraDistorParamLeft, nCameraOuterParamLeft);
-    mPtrCameraStereo->CameraLeft() = Camera(nCameraInnerParamLeft, nCameraDistorParamLeft);
+    TpCameraInnerParam nCameraInnerParamLeft; TpCameraOuterParam nCameraOuterParamLeft;
+    parseCalibrationCamera(sLeftCalibFile, nCameraInnerParamLeft, nCameraOuterParamLeft);
+    mPtrCameraStereo->CameraLeft() = Camera(nCameraInnerParamLeft);
     
     //right
     string sRightCalibFile = getRightViewFolder() + "/sensor.yaml";
-    TpCameraInnerParam nCameraInnerParamRight; TpCameraDistorParam nCameraDistorParamRight; TpCameraOuterParam nCameraOuterParamRight;
-    parseCalibrationCamera(sRightCalibFile, nCameraInnerParamRight, nCameraDistorParamRight, nCameraOuterParamRight);
-    mPtrCameraStereo->CameraRight() = Camera(nCameraInnerParamRight, nCameraDistorParamRight);
+    TpCameraInnerParam nCameraInnerParamRight; TpCameraOuterParam nCameraOuterParamRight;
+    parseCalibrationCamera(sRightCalibFile, nCameraInnerParamRight, nCameraOuterParamRight);
+    mPtrCameraStereo->CameraRight() = Camera(nCameraInnerParamRight);
     
     cout << "Info: here is need test. Not sure it's right." << endl;
     mPtrCameraStereo->setCameraOuterParamCvtPtLViewToRView(nCameraOuterParamLeft.get().t()*nCameraOuterParamRight.get());
@@ -180,7 +180,7 @@ const string DatasetEuRoc::getFrameAbsFileNmae ( Type::TpFrameIndex nFrmIndex, b
 
 
 void DatasetEuRoc::parseCalibrationCamera(const string& sCameraCalibFile, PKVIO::Type::TpCameraInnerParam& nCameraInnerParam,
-                                          PKVIO::Type::TpCameraDistorParam& nCameraDistorParam, PKVIO::Type::TpCameraOuterParam& nCameraOuterParam)
+                                          PKVIO::Type::TpCameraOuterParam& nCameraOuterParam)
 {
     cv::FileStorage fs(sCameraCalibFile, cv::FileStorage::READ);
     if(!fs.isOpened()){
@@ -197,8 +197,7 @@ void DatasetEuRoc::parseCalibrationCamera(const string& sCameraCalibFile, PKVIO:
     fs["distortion_coefficients"] >> fdistor;
     fs.release();
     
-    nCameraInnerParam  = Type::TpCameraInnerParam(wxhy, fxycxy);
-    nCameraDistorParam = Type::TpCameraDistorParam(fdistor);
+    nCameraInnerParam  = Type::TpCameraInnerParam(wxhy, fxycxy, fdistor);
     nCameraOuterParam  = Type::TpCameraOuterParam(T_BS);
 }
 
