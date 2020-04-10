@@ -9,12 +9,13 @@
 
 namespace PKVIO {
 namespace System {
+    
+System::~System(){
+    exit();
+}
 
 void System::exec(void) {
-    //initialize();
     doexec();
-    exit();
-    
 }
 
 void System::initialize(void) {
@@ -216,7 +217,8 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                 
             }
             
-            //cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
+            cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
+            mPtrCameraPoseCurFrame = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID());
             
             cv::Mat mImgToShow = mCurFrame.Image().clone();
             if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
@@ -246,6 +248,10 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
     mPtrFuncDoExec = FuncDorunVIO;
     mbRunAllFrame = bRunAllFrame;
 }
+
+TpPtrVIOSystem generateVIOSystem(void){
+  return std::make_shared<System>();
+};
 
 }
 

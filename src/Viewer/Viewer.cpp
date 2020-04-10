@@ -2,6 +2,28 @@
 #include <QPainter>
 #include "../System/Version.h"
 
+// some macro helpers for identifying the version number of QGLViewer
+// QGLViewer changed some parts of its API in version 2.6.
+// The following preprocessor hack accounts for this. THIS SUCKS!!!
+#if (((QGLVIEWER_VERSION & 0xff0000) >> 16) >= 2 && ((QGLVIEWER_VERSION & 0x00ff00) >> 8) >= 6)
+#define qglv_real qreal
+#else
+#define qglv_real float
+#endif
+
+// Again, some API changes in QGLViewer which produce annoying text in the console
+// if the old API is used.
+#if (((QGLVIEWER_VERSION & 0xff0000) >> 16) >= 2 && ((QGLVIEWER_VERSION & 0x00ff00) >> 8) >= 5)
+#define QGLVIEWER_DEPRECATED_MOUSEBINDING
+#endif
+
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
+
 
 namespace PKVIO
 {
@@ -9,47 +31,202 @@ namespace Viewer
 {
     
 // cannot be a statistic variable, why?
-//PKVIO::System::System mVioSystem;
+//PKVIO::System::System mPtrVioSystem;
     
+/**
+* \brief helper for setting up a camera for qglviewer
+*/
+class StandardCamera : public qglviewer::Camera
+{
+public:
+    StandardCamera() : _standard(true) {};
+
+    qglv_real zNear() const {
+    if (_standard) 
+        return qglv_real(0.001);
+    else 
+        return Camera::zNear(); 
+    }
+
+    qglv_real zFar() const
+    {  
+    if (_standard) 
+        return qglv_real(10000.0);
+    else 
+        return Camera::zFar();
+    }
+
+    bool standard() const {return _standard;}
+    void setStandard(bool s) { _standard = s;}
+
+private:
+    bool _standard;
+};
+
+
+G2oQGLViewer::G2oQGLViewer(QWidget* parent, const QGLWidget* shareWidget, Qt::WindowFlags flags) :
+  QGLViewer(parent, shareWidget, flags)
+{
+  setAxisIsDrawn(false);
+}
+
+G2oQGLViewer::~G2oQGLViewer()
+{
+  glDeleteLists(_drawList, 1);
+}
+
+void G2oQGLViewer::draw()
+{
+  if (_updateDisplay) {
+    _updateDisplay = false;
+    glNewList(_drawList, GL_COMPILE_AND_EXECUTE);
+    dodraw();
+    glEndList();
+  } else {
+    glCallList(_drawList); 
+  }
+}
+
+void G2oQGLViewer::init()
+{
+  QGLViewer::init();
+  //glDisable(GL_LIGHT0);
+ //glDisable(GL_LIGHTING);
+
+  setBackgroundColor(QColor::fromRgb(51, 51, 51));
+
+  // some default settings i like
+  glEnable(GL_LINE_SMOOTH);
+  glEnable(GL_BLEND); 
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_NORMALIZE);
+  //glEnable(GL_CULL_FACE);
+  glShadeModel(GL_FLAT);
+  //glShadeModel(GL_SMOOTH);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  setAxisIsDrawn();
+
+  // don't save state
+  setStateFileName(QString::null);
+
+  // mouse bindings
+#ifdef QGLVIEWER_DEPRECATED_MOUSEBINDING
+  setMouseBinding(Qt::NoModifier, Qt::RightButton, CAMERA, TRANSLATE);
+  setMouseBinding(Qt::NoModifier, Qt::MidButton, CAMERA, TRANSLATE);
+#else
+  setMouseBinding(Qt::RightButton, CAMERA, TRANSLATE);
+  setMouseBinding(Qt::MidButton, CAMERA, TRANSLATE);
+#endif
+
+  // keyboard shortcuts
+  setShortcut(CAMERA_MODE, 0);
+  setShortcut(EXIT_VIEWER, 0);
+  //setShortcut(SAVE_SCREENSHOT, 0);
+
+  // replace camera
+  qglviewer::Camera* oldcam = camera();
+  qglviewer::Camera* cam = new StandardCamera();
+  setCamera(cam);
+  cam->setPosition(qglviewer::Vec(0., 0., 75.));
+  cam->setUpVector(qglviewer::Vec(0., 1., 0.));
+  cam->lookAt(qglviewer::Vec(0., 0., 0.));
+  delete oldcam;
+
+  // getting a display list
+  _drawList = glGenLists(1);
+}
+
+void G2oQGLViewer::setUpdateDisplay(bool updateDisplay)
+{
+  _updateDisplay = updateDisplay;
+  update();
+}
+
     
 
 void PKVIOMainWindow::initUi() {
     QWidget* pWgtMainWin =  new QWidget;
+    this->setCentralWidget(pWgtMainWin);
     QHBoxLayout* pHBLMainWin = new QHBoxLayout;
     pWgtMainWin->setLayout(pHBLMainWin);
 
-    mPtrFrameImageWgt = new ImageWidget;
-    QWidget* pWgtMap = new QWidget;
-    QWidget* pWgtCtr = new QWidget;
+    mPtrFrameImageWgt   = new ImageWidget;
+    mPtrGLViewer        = new CameraPoseGLViewer;
+    QWidget* pWgtCtr    = new QWidget;
 
     pHBLMainWin->addWidget(mPtrFrameImageWgt);
-    pHBLMainWin->addWidget(pWgtMap);
+    pHBLMainWin->addWidget(mPtrGLViewer);
     pHBLMainWin->addWidget(pWgtCtr);
+    pHBLMainWin->setStretch(0, 1);
+    pHBLMainWin->setStretch(1, 2);
+    pHBLMainWin->setStretch(2, 1);
 
     QVBoxLayout* pVBLControl = new QVBoxLayout;
     pWgtCtr->setLayout(pVBLControl);
-    QPushButton* pStart = new QPushButton("Start");
-    QPushButton* pEnd = new QPushButton("End");
-    pVBLControl->addWidget(pStart);
-    pVBLControl->addWidget(pEnd);
+    pBtnStart     = new QPushButton("Start");
+    pBtnContinue  = new QPushButton("Continue");
+    pBtnStop      = new QPushButton("Stop");
+    pBtnClose     = new QPushButton("Close");
+    pVBLControl->addWidget(pBtnStart);
+    pVBLControl->addWidget(pBtnContinue);
+    pVBLControl->addWidget(pBtnStop);
+    pVBLControl->addWidget(pBtnClose);
     pVBLControl->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));
 
-    this->setCentralWidget(pWgtMainWin);
-
-
     pWgtCtr->setFixedWidth(100);
-    this->setFixedSize(1000, 600);
+    //this->setMinimumSize(1000, 600);
+    
+    pBtnContinue->setVisible(false);
+    pBtnStop->setEnabled(false);
+    pBtnClose->setEnabled(false);
 
-    QTimer* pTimerVIO = new QTimer(this);
-    connect(pTimerVIO, &QTimer::timeout, this, [&]() {
-        mVioSystem.doexec();
-        mPtrFrameImageWgt->setImage(mVioSystem.getDispalyImage());
+    mPtrTimerVIO = new QTimer(this);
+    connect(mPtrTimerVIO, &QTimer::timeout, this, [&]() {
+        if(!mPtrVioSystem)
+            return;
+        mPtrVioSystem->doexec();
+        mPtrFrameImageWgt->setImage(mPtrVioSystem->getDispalyImage());
+        mPtrGLViewer->addCameraPose(mPtrVioSystem->getCameraPoseCurFrame());
         //cout << "1000ms" <<endl;
     } );
-    pTimerVIO->start(10);
+    
+    connect(pBtnStart, &QPushButton::clicked, this, [&](){
+        pBtnContinue->setVisible(false);
+        pBtnStop->setVisible(true);
+        pBtnStop->setEnabled(true);
+        pBtnClose->setEnabled(true);
+        initVIO();
+        mPtrTimerVIO->setInterval(10);
+        mPtrTimerVIO->start();
+    });
+    connect(pBtnStop, &QPushButton::clicked, this, [&](){
+        pBtnContinue->setVisible(true);
+        pBtnStop->setVisible(false);
+        mPtrTimerVIO->stop();
+    });
+    connect(pBtnContinue, &QPushButton::clicked, this, [&](){
+        pBtnContinue->setVisible(false);
+        pBtnStop->setVisible(true);
+        mPtrTimerVIO->start();
+    });
+    connect(pBtnClose, &QPushButton::clicked, this, [&](){
+        pBtnContinue->setVisible(false);
+        pBtnStop->setVisible(true);
+        mPtrTimerVIO->stop();
+        mPtrVioSystem.reset();
+        mPtrGLViewer->clear();
+        mPtrFrameImageWgt->resetImage();
+        mPtrGLViewer->update();
+    });
+    /*
+    */
     
     mPtrFrameImageWgt->setStyleSheet("background-color:#0000ff");
-    pWgtMap->setStyleSheet("background-color:#ff0000");
+    //pWgtMap->setStyleSheet("background-color:#ff0000");
+    //mPtrGLViewer->setFixedSize();
+    
+    //this->update();
 }
 
 
@@ -64,8 +241,14 @@ void PKVIOMainWindow::runVIO() {
 void PKVIOMainWindow::initVIO() {
     cout << "Hello, This is PKVIO~" << endl;
     cout << "Version Infor: " << PKVIO::Version::version() << endl;
-    mVioSystem.initialize();
-    mVioSystem.setRunVIO(false);
+    
+    if(mPtrVioSystem){
+        mPtrVioSystem.reset();
+    }
+    mPtrVioSystem = PKVIO::System::generateVIOSystem();
+    
+    mPtrVioSystem->initialize();
+    mPtrVioSystem->setRunVIO(false);
 }
 
 
@@ -73,7 +256,6 @@ PKVIOMainWindow::PKVIOMainWindow()
 : QMainWindow()
 {
     initUi();
-    initVIO();
 }
 
 
@@ -126,6 +308,40 @@ void ImageWidget::paintEvent(QPaintEvent* e) {
     nPainter.drawImage(nRect, nImage);
 }
 
+void CameraPoseGLViewer::dodraw() {
+    size_t nSzCameraPose = mVecPose.size();
+    if(!nSzCameraPose)
+        return;
+    setAxisIsDrawn(nSzCameraPose%20<10);
+    
+    glPushMatrix();
+    float mPointSize = 20;
+    glPointSize(mPointSize);
+    //glBegin(GL_POINTS);
+    glBegin(GL_LINE_STRIP);
+    glColor3f(1.0,1.0,0.0);
+
+    for(size_t i=0, iend=nSzCameraPose; i<iend;i++)
+    {
+        auto p = mVecPose[i];
+        glVertex3f(p(0),p(1),p(2));
+    }
+    
+    glEnd();
+    glPopMatrix();
+    
+    /*
+    glBegin(GL_LINE_LOOP);
+    glVertex3f(0,0,0);
+    glVertex3f(100,0,0);
+    glVertex3f(0,100,0);
+    glVertex3f(100,100,100);
+    glVertex3f(0,0,100);
+    */
+}
+
+
 }
 }
+
 

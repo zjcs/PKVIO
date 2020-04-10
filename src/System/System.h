@@ -18,6 +18,7 @@ class System{
 public:
     typedef std::function<void(void)> TpFuncDoExec;
     System(): mbRunAllFrame(true){initialize();}
+    ~System();
     
     void showVideoOnly(void);
     void runVIO(void);
@@ -29,6 +30,7 @@ public:
     void exit(void);
     
     cv::Mat getDispalyImage(void){return mTrackingImageCurFrame;}
+    cv::Vec3f getCameraPoseCurFrame(void){return mPtrCameraPoseCurFrame->getPosition();}
 protected:
     void exec(void);
     
@@ -43,9 +45,14 @@ private:
     CoVisManager::CoVisManager          mCoVisMgr;
     KeyFrameManager::PtrKeyFrameManager mPtrKeyFrameMgr;
     
-    bool mbRunAllFrame;
-    cv::Mat mTrackingImageCurFrame;
+    bool                                mbRunAllFrame;
+    cv::Mat                             mTrackingImageCurFrame;
+    TpPtrCameraPose                     mPtrCameraPoseCurFrame;
 };
+
+typedef std::shared_ptr<System> TpPtrVIOSystem;
+
+TpPtrVIOSystem generateVIOSystem(void);
 
 }
 }

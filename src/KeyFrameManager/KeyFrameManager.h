@@ -178,7 +178,7 @@ protected:
                                 }else{
                                     nPtrCameraPose = std::make_shared<TpCameraPose>(*mMapFrameID2CameraPose.back());
                                 }
-                                cout << "Genera one Camera Pose for FrameID:" << fFrame.FrameID() <<endl;
+                                // cout << "Genera one Camera Pose for FrameID:" << fFrame.FrameID() <<endl;
                                 mMapFrameID2CameraPose.push_back(nPtrCameraPose);
                             }
 private:
