@@ -3,3 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 # INCLUDE_DIRECTORIES(.)
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 ADD_LIBRARY(Viewer ${DIR_SRCS})
+
+target_link_libraries(Viewer ${QGLVIEWER_LIBRARY} ${MY_QT_LIBRARIES} ${OPENGL_LIBRARY})
+target_link_libraries(Viewer System KeyPointManager)
+

@@ -17,15 +17,21 @@ using namespace DatasetManager;
 class System{
 public:
     typedef std::function<void(void)> TpFuncDoExec;
+    System(): mbRunAllFrame(true){initialize();}
     
     void showVideoOnly(void);
     void runVIO(void);
-protected:
-    void exec(void);
+    
+    void setRunVIO(bool bRunAllFrame = true);
     
     void initialize(void);
     void doexec(void);
     void exit(void);
+    
+    cv::Mat getDispalyImage(void){return mTrackingImageCurFrame;}
+protected:
+    void exec(void);
+    
 private:
     cv::Matx44f solverCurrentFramePose(const TpFrameID nFrameIDCur);
     
@@ -36,6 +42,9 @@ private:
     KeyPointManager::KeyPointManager    mKeyPointMgr;
     CoVisManager::CoVisManager          mCoVisMgr;
     KeyFrameManager::PtrKeyFrameManager mPtrKeyFrameMgr;
+    
+    bool mbRunAllFrame;
+    cv::Mat mTrackingImageCurFrame;
 };
 
 }

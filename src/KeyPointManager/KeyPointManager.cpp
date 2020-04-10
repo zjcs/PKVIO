@@ -37,7 +37,7 @@ FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
     // match;
     TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(mKptsDescriptors);
     
-    mPtrDesciptorMatcher->showMatchResult(f, mKptsDescriptors, mMatchResult, "Left | Right - Match Result");
+    //mPtrDesciptorMatcher->showMatchResult(f, mKptsDescriptors, mMatchResult, "Left | Right - Match Result");
     //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
     mFrameMatchResult.pushInnerFrameDescriptorMatchResult(mMatchResult);
     
@@ -146,7 +146,7 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     
     
     //AutoLogTimer("KeyPoint show match");
-    mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
+    //mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
     //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
 }
 

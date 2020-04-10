@@ -11,7 +11,7 @@ namespace PKVIO {
 namespace System {
 
 void System::exec(void) {
-    initialize();
+    //initialize();
     doexec();
     exit();
     
@@ -53,56 +53,7 @@ void System::showVideoOnly() {
 
 
 void System::runVIO() {
-    
-    auto FuncDorunVIO = [&](){
-        for (int nIndex = 0; !mPtrDataset->isFinished(); ++nIndex) {
-            Frame& mCurFrame = mPtrDataset->read();
-            
-            
-            if(mCurFrame.getImage().empty() && DatasetManager::isOfflineDatasetType(mPtrDataset->type())){
-                FrameInfo mFrmInfo = dynamic_cast<DatasetOfflineImp*>(mPtrDataset.get())->getFrameInfor(mCurFrame.FrameID());
-                cout<< "Empyt:" << mFrmInfo.mFrameIndex << " - " << mFrmInfo.mStrFileName <<endl;
-            }
-            
-            //cout << "Feature Matching ..." <<endl;
-            const KeyPointManager::FrameMatchResult& mFrameMatchResult = mKeyPointMgr.solve(mCurFrame);
-            //cout << "Feature Matching Finish." <<endl;
-            
-            //cout << "CoVis Graph ..." <<endl;
-            mCoVisMgr.solve(mCurFrame, mFrameMatchResult);
-            //cout << "CoVis Graph Finish." <<endl;
-            
-            KeyPointManager::TpOneFrameIDManager& mOneFrameIDMgr = mCoVisMgr.OneFrameKptIDMgrByFrameID(mCurFrame.FrameID());
-            mPtrKeyFrameMgr->solve(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
-            
-            debugCountTrackingKptIDWihtMapPointID(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
-            
-            if(mPtrKeyFrameMgr->isKeyFrame(mCurFrame.FrameID())){
-                // non-kf observe should insert to the mappoint.
-            }else{
-                
-            }
-            
-            cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
-            
-            cv::Mat mImgToShow = mCurFrame.Image().clone();
-            if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
-                KeyPointManager::TpOneFrameKptDescriptor& CurFrmKptsDescriptor = mKeyPointMgr.getDescriptor(mCurFrame.FrameID());
-                mImgToShow = Tools::drawKeyPoints(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft);
-                const Camera& nCameraLeft = mPtrDataset->getPtrCamera()->getCameraLeft();
-                cv::Mat nImgUndistorLeft = nCameraLeft.getCameraInnerParam().undistor(mCurFrame.Image());
-                TpVecKeyPoints nVecKptUndistort = nCameraLeft.getCameraInnerParam().undistor(CurFrmKptsDescriptor.mKeyPointsLeft);
-                
-                Tools::drawMatch(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft, nImgUndistorLeft, nVecKptUndistort, false, "Distor|Undistor");
-            }
-            if(!mImgToShow.empty()){
-                cv::imshow("Viewer", mImgToShow);
-                cv::waitKey(40);
-            }
-        }
-    };
-    
-    mPtrFuncDoExec = FuncDorunVIO;
+    setRunVIO();
     exec();
 }
 
@@ -234,6 +185,68 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     
     return nFramePoseCur;
 }
+
+void System::setRunVIO(bool bRunAllFrame /*= true*/) {
+    auto FuncDorunVIO = [&](){
+        for (int nIndex = 0; !mPtrDataset->isFinished(); ++nIndex) {
+            Frame& mCurFrame = mPtrDataset->read();
+            
+            
+            if(mCurFrame.getImage().empty() && DatasetManager::isOfflineDatasetType(mPtrDataset->type())){
+                FrameInfo mFrmInfo = dynamic_cast<DatasetOfflineImp*>(mPtrDataset.get())->getFrameInfor(mCurFrame.FrameID());
+                cout<< "Empyt:" << mFrmInfo.mFrameIndex << " - " << mFrmInfo.mStrFileName <<endl;
+            }
+            
+            //cout << "Feature Matching ..." <<endl;
+            const KeyPointManager::FrameMatchResult& mFrameMatchResult = mKeyPointMgr.solve(mCurFrame);
+            //cout << "Feature Matching Finish." <<endl;
+            
+            //cout << "CoVis Graph ..." <<endl;
+            mCoVisMgr.solve(mCurFrame, mFrameMatchResult);
+            //cout << "CoVis Graph Finish." <<endl;
+            
+            KeyPointManager::TpOneFrameIDManager& mOneFrameIDMgr = mCoVisMgr.OneFrameKptIDMgrByFrameID(mCurFrame.FrameID());
+            mPtrKeyFrameMgr->solve(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
+            
+            debugCountTrackingKptIDWihtMapPointID(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
+            
+            if(mPtrKeyFrameMgr->isKeyFrame(mCurFrame.FrameID())){
+                // non-kf observe should insert to the mappoint.
+            }else{
+                
+            }
+            
+            //cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
+            
+            cv::Mat mImgToShow = mCurFrame.Image().clone();
+            if(mKeyPointMgr.queryDescriptorExisting(mCurFrame.FrameID())){
+                KeyPointManager::TpOneFrameKptDescriptor& CurFrmKptsDescriptor = mKeyPointMgr.getDescriptor(mCurFrame.FrameID());
+                mImgToShow = Tools::drawKeyPoints(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft);
+                const Camera& nCameraLeft = mPtrDataset->getPtrCamera()->getCameraLeft();
+                cv::Mat nImgUndistorLeft = nCameraLeft.getCameraInnerParam().undistor(mCurFrame.Image());
+                TpVecKeyPoints nVecKptUndistort = nCameraLeft.getCameraInnerParam().undistor(CurFrmKptsDescriptor.mKeyPointsLeft);
+                
+                //mImgToShow = Tools::drawMatch(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft, nImgUndistorLeft, nVecKptUndistort, false, "Distor|Undistor");
+                mImgToShow = Tools::drawMatch(mImgToShow, CurFrmKptsDescriptor.mKeyPointsLeft, nImgUndistorLeft, nVecKptUndistort, true);
+            }
+            
+            
+            if(!mImgToShow.empty()){
+                mTrackingImageCurFrame = mImgToShow;
+                //cv::imshow("Viewer", mImgToShow);
+                //cv::waitKey(mbRunAllFrame?40:1);
+            }
+            
+            if(!mbRunAllFrame){
+                break;
+            }
+        }
+    };
+    
+    mPtrFuncDoExec = FuncDorunVIO;
+    mbRunAllFrame = bRunAllFrame;
+}
+
 }
 
 }
