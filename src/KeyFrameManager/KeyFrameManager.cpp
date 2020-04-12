@@ -10,6 +10,20 @@ float RandomData(){
     float rd = (rand()%1000*1.0/1000);
     return rd;
 }
+
+Type::TpVecMapPointID MapPointIDManager::getMapPointIDsGeneratedByFrame(const Type::TpFrameID nFrameID) const
+{
+    TpVecMapPointID nVecMapPointID;
+    for(auto Iter = mMapFromMapPointID2KptID.rbegin();Iter!=mMapFromMapPointID2KptID.rend();++Iter){
+        const TpMapPoint& nMapPoint =  *Iter;
+        const auto& nVecMeasurements = nMapPoint.getVecMeasurments();
+        if(nVecMeasurements[0].first != nFrameID)
+            break;
+        nVecMapPointID.push_back(nMapPoint.getMapPointID());
+    }
+    return nVecMapPointID;
+}
+
     
     
 
@@ -59,8 +73,8 @@ EnSLAMState KeyFrameManager::updateTrackState(int nCountSumTrackKpts, int nCount
     //
     EnSLAMState eSLAMState = EnUnKnown;
     std::string sSLAMState;
-    if(nCountSumTrackKpts<30) {
-        if(nCountKptsOnThisFrame > 50) {
+    if(nCountSumTrackKpts< DebugManager::getMinimumKptNumberToKeepTrackingWell()) {
+        if(nCountKptsOnThisFrame >= DebugManager::getMinimumKptNumberToCreateKFOtherwiseLost()) {
             // new key frame
             sSLAMState = "#### need keyframe";
             eSLAMState = EnNeedKF;
@@ -82,12 +96,13 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
                         KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) 
 {
     //Tools::Timer tTimer("createOneKeyFrame", true);
-     
+    
     //TpVecKeyPointID nVecAllKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
     TpVecKeyPointID nVecAllKptIDs;
     
+    int nCountFirstDetectedKptIDToMapIDs = 0;
     {
-        int nCountFirstDetectedKptIDs = 0, nCountFirstDetectedKptIDToMapIDs = 0;
+        int nCountFirstDetectedKptIDs = 0;
         auto FuncAddFirstDetectedKptIDAndMapIDInfo = [&](){
             mDebugKeyFrameGenerationInfo.nCountFirstDetectedKptIDToMapIDs   = nCountFirstDetectedKptIDToMapIDs;
         };
@@ -129,8 +144,9 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
             TpKeyPointID nKptID         = nVecAllKptIDs[nIdxKptID];   
             
             TpMapPoint& mMapPoint = mMapPointIDManager.MapPointByKeyPointID(nKptID);
-            mMapPoint.addMeasurement(fFrame.FrameIndex(), nVecAllKptIndex[nIdxKptID]);
+            mMapPoint.addMeasurement(fFrame.FrameID(), nVecAllKptIndex[nIdxKptID]);
         }
+        assert(nCountFirstDetectedKptIDToMapIDs == (int)mMapPointIDManager.getMapPointIDsGeneratedByFrame(fFrame.FrameID()).size());
     }
     
     // 

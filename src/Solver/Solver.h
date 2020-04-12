@@ -25,6 +25,9 @@ namespace Solver
         void initMapPoints(const map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D);
         void addMeasurement(const TpVisualMeasurement& nVisualMeasurement);
         void solve(map<TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose, map<TpMapPointID, TpPtrMapPoint3D>& nMapMapPointID2MapPoint3D, const TpVecVisualMeasurement& nVecVisualMeasurement, const TpPtrCameraStereo nPtrCameraStereo);
+        
+        
+        void solveBySimulator(cv::Mat nInnerMat, TpPtrCameraStereo nPtrCameraStereo);
     protected:
         void initialization(void);
     };

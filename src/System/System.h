@@ -17,7 +17,9 @@ using namespace DatasetManager;
 class System{
 public:
     typedef std::function<void(void)> TpFuncDoExec;
-    System(): mbRunAllFrame(true){initialize();}
+    System(): mbRunAllFrame(true){
+        // initialize();
+    }
     ~System();
     
     void showVideoOnly(void);
@@ -25,7 +27,7 @@ public:
     
     void setRunVIO(bool bRunAllFrame = true);
     
-    void initialize(void);
+    void initialize(bool bUseSimulator = false);
     void doexec(void);
     void exit(void);
     

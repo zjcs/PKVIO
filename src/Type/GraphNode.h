@@ -123,11 +123,13 @@ void                widthSearchFirst(TpPtrNode pNodeFrom, TpPtrNode pNodeTo, int
     if(nMaxDepth==0)return;
     
     int nIdxNodeInGraph = pNodeTo->getNodeIndexInGraph();
-    if(nVecFlagVisited[nIdxNodeInGraph] || fSkip(pNodeFrom, pNodeTo))
+    if(nVecFlagVisited[nIdxNodeInGraph])
         return;
     
-    fVisit(pNodeFrom,pNodeTo);
-    nVecFlagVisited[nIdxNodeInGraph] = true;
+    if(!fSkip(pNodeFrom, pNodeTo)){
+        fVisit(pNodeFrom,pNodeTo);
+        nVecFlagVisited[nIdxNodeInGraph] = true;
+    }
     
     for(int nIdxAdjoin=0,nSzAdjoin=pNodeTo->sizeAdjoinNodes();nIdxAdjoin<nSzAdjoin;++nIdxAdjoin){
         TpPtrNode pNodeNextTo = pNodeTo->getNodeByIndex(nIdxAdjoin);

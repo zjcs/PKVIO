@@ -1,4 +1,4 @@
-#include "CoVisManager.h"
+ #include "CoVisManager.h"
 #include <map>
 #include <iostream>
 #include "DescriptorMatch.h"
@@ -192,19 +192,25 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const 
         
         const TpFrameID nFrameIDCur = getFrameIDTemplate(pNodeCurFrame->getData());
         const TpFrameID nFrameIDTo  = getFrameIDTemplate(pNodeTo->getData());
+        const TpFrameID nFrameIDFrom= getFrameIDTemplate(pNodeFrom->getData());
         
         //cout << "add covis between "<< nFrameIDTo << "->" << nFrameIDCur << "..." <<endl;
         // TODO: need optimize
         const int nSzCosVisKptIDs   = mKeyPointIDManager.sizeCoVisKptIDs(nFrameIDCur, nFrameIDTo);
-        //if(nSzCosVisKptIDs>10)
+        const int nSzCosVisKptIDsFT = mKeyPointIDManager.sizeCoVisKptIDs(nFrameIDFrom, nFrameIDTo);
+        
+        // not visit pNodeTo from this edge between pNodeFrom and pNodeTo;
+        if((nSzCosVisKptIDsFT<60 || nSzCosVisKptIDs<50) || nSetFrameIDsDirectAdjoinToCurFrame.count(nFrameIDTo)){
+            return;
+        }
+        
+        //cout << "add covis(w)"<< nSzCosVisKptIDs <<" between "<< nFrameIDCur << "->" << nFrameIDTo << " via " << nFrameIDFrom << "->"<< nFrameIDTo <<endl;
         mPtrCoVisGraph->buildCoVisBetween(pNodeTo, pNodeCurFrame, CoVisFramePairAndWeight(nFrameIDTo, nFrameIDCur, nSzCosVisKptIDs));
         
-        cout << "add covis between "<< nFrameIDTo << "->" << nFrameIDCur << "end." <<endl;
     };
     auto FuncSkipNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
         const TpFrameID nFrameIDTo = pNodeTo->getData().FrameID();
-        if(nSetFrameIDsDirectAdjoinToCurFrame.count(nFrameIDTo))
-            return true;
+        // always skip some node.
         return false;
     };
     mPtrCoVisGraph->BreadthFristSearch(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);    
@@ -217,7 +223,42 @@ TpVecCoVisFrameIDs CoVisManager::getCoVisFrameIDs(const Type::TpFrameID nFrameID
     return vCoVisFrameIDs;
 }
 
+void CoVisManager::getCoVis(const Type::TpFrameID nFrameIDFrom, const Type::TpFrameID nFrameIDTo,
+                            Type::TpVecKeyPointID& nCovisKptID, Type::TpVecMatchResult& nCoVisMatch) 
+{
+    TpVecKeyPointID nVecKptIDsFrom; TpVecKeyPointIndex nVecKptIndexsFrom;
+    OneFrameKptIDMgrByFrameID(nFrameIDFrom).getAllKptIDsAndIdexs(nVecKptIDsFrom, nVecKptIndexsFrom);
     
+    TpVecKeyPointID nVecKptIDsTo; TpVecKeyPointIndex nVecKptIndexsTo;
+    OneFrameKptIDMgrByFrameID(nFrameIDTo).getAllKptIDsAndIdexs(nVecKptIDsTo, nVecKptIndexsTo);
+    
+    auto nMapKptID2KptIdxFrom = Tools::buildMap(nVecKptIDsFrom, nVecKptIndexsFrom);
+    for(int nIdx=0,nSz= nVecKptIDsTo.size();nIdx<nSz;++nIdx){
+        auto nKptIDTo = nVecKptIDsTo[nIdx];
+        auto Iter = nMapKptID2KptIdxFrom.find(nKptIDTo);
+        if(Iter == nMapKptID2KptIdxFrom.end())
+            continue;
+        nCovisKptID.push_back(nKptIDTo);
+        nCoVisMatch.push_back(cv::DMatch(Iter->second, nVecKptIndexsTo[nIdx], -1));
+    }
+}
+
+
+void CoVisManager::getCoVis(const Type::TpFrameID nFrameIDFrom, const Type::TpFrameID nFrameIDTo,
+                            Type::TpVecMatchResult& nCoVisMatch) 
+{
+    Type::TpVecKeyPointID nCovisKptID;
+    getCoVis(nFrameIDFrom, nFrameIDTo, nCovisKptID, nCoVisMatch);
+}
+
+
+Type::TpVecMatchResult CoVisManager::getCoVis(const Type::TpFrameID nFrameIDFrom, const Type::TpFrameID nFrameIDTo) 
+{
+    Type::TpVecMatchResult nCoVisMatch;
+    getCoVis(nFrameIDFrom, nFrameIDTo, nCoVisMatch);
+    return nCoVisMatch;
+}
+
 }
 
 }

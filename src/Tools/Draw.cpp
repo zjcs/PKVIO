@@ -16,6 +16,10 @@ cv::Mat showImageIfTitleNotEmpty(const cv::Mat& mImg, const std::string sWindowT
         return mImg;
 }
 
+void drawKeyPointsSelf(cv::Mat& mImg, const TpVecKeyPoints& mKpts){
+    cv::drawKeypoints (mImg, mKpts, mImg, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_OVER_OUTIMG);
+}
+
 cv::Mat drawKeyPoints(const cv::Mat& mImg, const TpVecKeyPoints& mKpts)
 {
     bool bSomethingWrong = mImg.empty();
@@ -40,21 +44,30 @@ cv::Mat merge(const cv::Mat& mImgLeft,const cv::Mat& mImgRight, bool bTrueHoriFa
         return mImgRight.clone();
     if(mImgRight.empty())
         return mImgLeft.clone();
-    auto FuncMerge = [](const cv::Mat& mImgL, const cv::Mat& mImgR)->cv::Mat{
+    auto FuncMerge = [=](const cv::Mat& mImgL, const cv::Mat& mImgR)->cv::Mat{
         size_t nW = mImgL.cols + mImgR.cols;
         size_t nH = mImgL.rows + mImgR.rows;
         size_t nHMax = std::max(mImgL.rows, mImgR.rows);
-        cv::Mat mImgResult(nW, nHMax, mImgL.type(), cv::Scalar(0));
-        mImgL.copyTo(mImgResult(cv::Rect(0,0,mImgL.cols, mImgL.rows)));
-        mImgR.copyTo(mImgResult(cv::Rect(mImgL.cols, 0, mImgR.cols, mImgR.rows)));
-        return mImgResult;
+        size_t nWMax = std::max(mImgL.cols, mImgR.cols);
+        if(bTrueHoriFalseVetical){
+            cv::Mat mImgResult(nHMax, nW, mImgL.type(), cv::Scalar(0));
+            mImgL.copyTo(mImgResult(cv::Rect(0,0,mImgL.cols, mImgL.rows)));
+            mImgR.copyTo(mImgResult(cv::Rect(mImgL.cols, 0, mImgR.cols, mImgR.rows)));
+            return mImgResult;
+        }else{
+            cv::Mat mImgResult(nH, nWMax, mImgL.type(), cv::Scalar(0));
+            mImgL.copyTo(mImgResult(cv::Rect(0,0,mImgL.cols, mImgL.rows)));
+            mImgR.copyTo(mImgResult(cv::Rect(0, mImgL.rows, mImgR.cols, mImgR.rows)));
+            return mImgResult;
+        }
     };
     
     if(mImgLeft.type()!=mImgRight.type()) {
         cv::Mat mImgRcp = cv::Mat(mImgRight.size(), mImgLeft.type(), cv::Scalar(0));
-        return bTrueHoriFalseVetical? FuncMerge(mImgLeft, mImgRcp): FuncMerge(rotate90(mImgLeft), rotate90(mImgRcp));
+        cout <<"Error: Image type not match in Tools::merge - " << mImgLeft.channels() << mImgRight.channels()<<  mImgRcp.channels() <<endl;
+        return FuncMerge(mImgLeft, mImgRcp);
     }else{
-        return bTrueHoriFalseVetical? FuncMerge(mImgLeft, mImgRight): FuncMerge(rotate90(mImgLeft), rotate90(mImgRight));
+        return FuncMerge(mImgLeft, mImgRight);
     }
     
 }
@@ -92,11 +105,11 @@ cv::Mat drawMatch(const cv::Mat& mImgLeft, const Type::TpVecKeyPoints& mKptsLeft
         
         return drawMatch(mImgLeft, mKptsLeft, mImgRight, mKptsRight, mMatch, bTrueHoriFalseVetical, sWindowTitle_ShowIfNotEmpty);
     }
+    
 }
 
 cv::Mat drawMatch(const cv::Mat& mImgLeft, const Type::TpVecKeyPoints& mKptsLeft, const cv::Mat& mImgRight, const Type::TpVecKeyPoints& mKptsRight, const Type::TpVecMatchResult& mMatch, bool bTrueHoriFalseVetical /*= true*/, const std::string sWindowTitle_ShowIfNotEmpty /*= ""*/)
 {
-    bTrueHoriFalseVetical = true;
     
     cv::Mat mImgKptLeft = drawKeyPoints(mImgLeft, mKptsLeft);
     cv::Mat mImgKptRight = drawKeyPoints(mImgRight, mKptsRight);
@@ -105,11 +118,19 @@ cv::Mat drawMatch(const cv::Mat& mImgLeft, const Type::TpVecKeyPoints& mKptsLeft
     if(bTrueHoriFalseVetical){
         cv::drawMatches(mImgKptLeft, mKptsLeft, mImgKptRight, mKptsRight, mMatch, mDrawMatchResult);
     }else{
-        TpVecKeyPoints nKptsLeft90  = rotate90(mKptsLeft, mImgKptLeft.size());
-        TpVecKeyPoints nKptsRight90 = rotate90(mKptsRight, mImgKptRight.size());
-        mImgKptLeft = rotate90(mImgKptLeft); mImgKptRight = rotate90(mImgKptRight);
+        //TpVecKeyPoints nKptsLeft90  = rotate90(mKptsLeft, mImgKptLeft.size());
+        //TpVecKeyPoints nKptsRight90 = rotate90(mKptsRight, mImgKptRight.size());
+        //mImgKptLeft = rotate90(mImgKptLeft); mImgKptRight = rotate90(mImgKptRight);
         
-        cv::drawMatches(mImgKptLeft, nKptsLeft90, mImgKptRight, nKptsRight90, mMatch, mDrawMatchResult);
+        //cv::drawMatches(mImgKptLeft, nKptsLeft90, mImgKptRight, nKptsRight90, mMatch, mDrawMatchResult);
+        mDrawMatchResult = merge(mImgKptLeft, mImgKptRight, bTrueHoriFalseVetical);
+        for(int nIdxMatch=0, nSzMatch = mMatch.size();nIdxMatch<nSzMatch;++nIdxMatch){
+            cv::line(mDrawMatchResult, 
+                     mKptsLeft[mMatch[nIdxMatch].queryIdx].pt,
+                     mKptsRight[mMatch[nIdxMatch].trainIdx].pt + cv::Point2f(0, mImgKptLeft.rows),
+                     cv::Scalar(random()%256,random()%256,random()%256), 2 
+            );
+        }
     }
     
     return showImageIfTitleNotEmpty(mDrawMatchResult, sWindowTitle_ShowIfNotEmpty);

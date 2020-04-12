@@ -32,6 +32,7 @@ typedef list<TpKeyFrameID>      TpLstKeyFrameID;
 
 extern const TpFrameID      INVALIDFRAMEID;     
 extern const TpKeyPointID   INVALIDKEYPOINTID;     
+
 inline bool                 isInvalideFrameID(const TpFrameID nFrameID){return nFrameID==INVALIDFRAMEID;}
 inline bool                 isInvalideKeyPointID(const TpKeyPointID nKptID){return nKptID==INVALIDKEYPOINTID;}
 inline bool                 isValideKeyPointID(const TpKeyPointID nKptID){return nKptID!=INVALIDKEYPOINTID;}
@@ -58,6 +59,8 @@ public:
     TpFrameID       mFrameID;
     TpFrameIndex    mFrameIndex;
 };
+
+cv::Vec3f project(const cv::Matx44f& T, const cv::Vec3f& pt);
 
 class Frame{
 public:
@@ -99,6 +102,9 @@ public:
     const cv::Matx44f&  getMatx44f(void)const{return mPoseMatx44f;}
     
     cv::Vec3f           getPosition(void){ return Type::cvtMatx44fToPosition(getMatx44f()); }
+    cv::Vec3f           cvtToWorld(const cv::Vec3f& nPtInWorld)const{return Type::project(mPoseMatx44f, nPtInWorld); };
+    cv::Vec3f           cvtToCamera(const cv::Vec3f& nPtInCamera)const{ return Type::project(mPoseMatx44f.inv(), nPtInCamera);};
+    
     
 private:
     cv::Matx44f     mPoseMatx44f;

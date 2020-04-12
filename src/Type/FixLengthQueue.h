@@ -11,7 +11,7 @@ template<typename T>
 class FixLengthQueue: public list<T>
 {
 public:
-    FixLengthQueue(const int nMaxLength = 10):mMaxLength(nMaxLength){}
+    FixLengthQueue(const int nMaxLength = 100):mMaxLength(nMaxLength){}
     void            push(const T& t) {
         auto nCurSz = (int)this->size();
         if(isFixedLength() && nCurSz>=mMaxLength){

@@ -20,6 +20,8 @@ public:
     KeyPointManager(void);
     ~KeyPointManager();
     
+    void                        setSimulator(bool bUseSimulator, TpPtrCameraStereo nPtrCameraStereo);
+    
     typedef std::shared_ptr<ORB_SLAM2::ORBextractor> TpFeatureExtractor;
     
     void                        extract(const Frame& f, TpOneFrameKptDescriptor& mKptsDescriptors);
@@ -42,7 +44,14 @@ public:
     
     bool                        getTrackingKptDescriptorMatchResult(const TpFrameID nFrameIDMaster,const TpFrameID nFrameIDSlaver, TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& nMatchResult);
 protected:
-    void                        track(const Frame& fCurFrame, const TpOneFrameKptDescriptor& fCurFrameKptDescriptor);
+    void                        track(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
+                                      TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult);
+    
+    void                        trackBySimulator(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
+                                      TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult);
+    
+    void                        track(const Frame& fCurFrame, const TpOneFrameKptDescriptor& fCurFrameKptDescriptor,
+                                vector<TpDescriptorMatchResult>& nOuterMatchResult);
     
     // for what?
     const Frame&                getLastFrame(void){ return mFrameHistoryRecord.back(); }
@@ -69,6 +78,9 @@ private:
     FrameMatchResultHistory     mFrameMatchResultHistoryRecord;
     
     DebugManager::DebugKeyPointTrackingInfo mDebugKeyPointTrackingInfo;
+    
+    bool                        mBoolUseSimulator;
+    TpPtrCameraStereo           mPtrCameraStereo;
 }; 
 
 }

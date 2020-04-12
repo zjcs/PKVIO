@@ -75,8 +75,13 @@ TpDescriptorMatchResult DescriptorMatch::matchByKnn(const PKVIO::KeyPointManager
 
 TpDescriptorMatchResult DescriptorMatch::matchByBrutForceInWindow(const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fKptsDesc) {
     //
-    cv::Size mSearchWindowSize(30, 25); 
-    cv::Point mSearchWindowOrig(mSearchWindowSize/2);
+    cv::Size2f mSearchWindowSize(60, 20); 
+    cv::Point2f mSearchWindowOrig(mSearchWindowSize.width/2, mSearchWindowSize.height/2);
+    
+    // Inner Frame Keypoint Correspondense.
+    if(fKptsDesc.FrameIDLeft() == fKptsDesc.FrameIDRight()){
+        mSearchWindowOrig.x = mSearchWindowSize.width-4;
+    }
     
     //cout << fKptsDesc.mDescriptorsLeft.rows << "-" << fKptsDesc.mDescriptorsLeft.cols << "-" << fKptsDesc.mDescriptorsLeft.channels() << "-" << fKptsDesc.mDescriptorsLeft.type() << endl;
     //cout << cv::CV_8UC32 <<endl;

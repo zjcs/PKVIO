@@ -35,6 +35,7 @@ typedef pair<int,int>                   TpMatchPair;
 typedef vector<TpMatchPair>             TpVecMatchPairs;
 
 typedef int                             TpMapPointID;
+typedef vector<int>                     TpVecMapPointID;
 extern const TpMapPointID               INVALIDMAPPOINTID;
 
 typedef cv::Point3f                     TpMapPoint3D;

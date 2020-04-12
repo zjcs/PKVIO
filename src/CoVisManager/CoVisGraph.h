@@ -70,7 +70,8 @@ public:
             bool bEqualByOneData = mVecCosVisFramePairAndWeight[nIdxCoVis] == nCoVisNodeData.mVecCosVisFramePairAndWeight[nIdxCoVis];
             bEqualByEachData &= bEqualByOneData;
         }
-        assert(bEqualByFrameID == bEqualByCoVisCount && bEqualByCoVisCount == bEqualByEachData);
+        assert(bEqualByFrameID == bEqualByEachData);
+        if(bEqualByEachData) assert(bEqualByCoVisCount);
         return bEqualByFrameID;
     }
     

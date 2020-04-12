@@ -6,6 +6,7 @@
 
 namespace PKVIO{
     namespace Draw{
+        void drawKeyPointsSelf(cv::Mat& mImg, const TpVecKeyPoints& mKpts);
         cv::Mat drawKeyPoints(const cv::Mat& mImg, const TpVecKeyPoints& mKpts);
         
         cv::Mat rotate90(const cv::Mat& mImg);

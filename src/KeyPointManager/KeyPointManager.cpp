@@ -6,7 +6,9 @@
 namespace PKVIO{
 namespace KeyPointManager{
 
-KeyPointManager::KeyPointManager() {
+KeyPointManager::KeyPointManager() 
+: mBoolUseSimulator(false)
+{
     initialize();
 }
 
@@ -29,24 +31,26 @@ FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
     mDebugKeyPointTrackingInfo = DebugManager::DebugKeyPointTrackingInfo();
     Tools::Timer tTimer(FuncLogDebugKeyPointTrackingInfo, "KeyPoint extract and match", false, &mDebugKeyPointTrackingInfo.mTimeCostWhole);
     mFrameMatchResult.clear();
-        
-    // extract;
-    TpOneFrameKptDescriptor mKptsDescriptors;
-    extract(f, mKptsDescriptors);
     
-    // match;
-    TpDescriptorMatchResult mMatchResult = mPtrDesciptorMatcher->match(mKptsDescriptors);
+    TpOneFrameKptDescriptor nKptsDescriptors;
+    TpDescriptorMatchResult mInnerMatchResult;
+    vector<TpDescriptorMatchResult> nOuterMatchResult;
+    if(mBoolUseSimulator){
+        trackBySimulator(f, nKptsDescriptors, mInnerMatchResult, nOuterMatchResult);
+    }else{
+        track(f, nKptsDescriptors, mInnerMatchResult, nOuterMatchResult);
+    }
     
     //mPtrDesciptorMatcher->showMatchResult(f, mKptsDescriptors, mMatchResult, "Left | Right - Match Result");
     //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
-    mFrameMatchResult.pushInnerFrameDescriptorMatchResult(mMatchResult);
-    
-    // track from previous frames.
-    track(f, mKptsDescriptors);
+    mFrameMatchResult.pushInnerFrameDescriptorMatchResult(mInnerMatchResult);
+    for(size_t nIdxOuterMatch=0,nSzOuterMatch=nOuterMatchResult.size();nIdxOuterMatch<nSzOuterMatch;++nIdxOuterMatch){
+        mFrameMatchResult.pushOuterFrameDescriptorMatchResult(nOuterMatchResult[nIdxOuterMatch]);
+    }
     
     // TODO : Implement EXCORP function, and move this operation before track.
     // History Record;
-    mFrameKptsDescriptorHistoryRecord.push(mKptsDescriptors);
+    mFrameKptsDescriptorHistoryRecord.push(nKptsDescriptors);
     const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(f);
     mFrameHistoryRecord.push(fStereoFrame);
     
@@ -117,7 +121,9 @@ void KeyPointManager::initializeHistoryRecord()
 
 
 
-void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fCurFrameKptDescriptor) {
+void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fCurFrameKptDescriptor, 
+    vector<TpDescriptorMatchResult>& nOuterMatchResult) 
+{
     //Tools::Timer tTimer("KeyPoint track");
     
     if(mFrameKptsDescriptorHistoryRecord.empty() || mFrameHistoryRecord.empty())
@@ -142,11 +148,12 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     // Pre-Cur is about 60%, 300/500 match and a little better than left-right's 50%, and all is right match.
     TpDescriptorMatchResult mPrevAndCurMatchResult = mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
         
-    mFrameMatchResult.pushOuterFrameDescriptorMatchResult(mPrevAndCurMatchResult);
+    //mFrameMatchResult.pushOuterFrameDescriptorMatchResult(mPrevAndCurMatchResult);
+    nOuterMatchResult.push_back(mPrevAndCurMatchResult);
     
     
     //AutoLogTimer("KeyPoint show match");
-    //mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
+    mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
     //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
 }
 
@@ -255,6 +262,108 @@ PKVIO::KeyPointManager::TpOneFrameKptDescriptor KeyPointManager::constructTracki
     nPrevCurKptDescriptor.mDescriptorsRight = fFrameKptDescriptorCur.mDescriptorsLeft;
     
     return nPrevCurKptDescriptor;
+}
+
+
+void KeyPointManager::track(const Type::Frame& f,TpOneFrameKptDescriptor& nKptsDescriptors,
+                            TpDescriptorMatchResult& nInnerMatchResult
+, std::vector< PKVIO::KeyPointManager::TpDescriptorMatchResult >& nOuterMatchResult) 
+{
+    // extract;
+    extract(f, nKptsDescriptors);
+    
+    // match;
+    nInnerMatchResult = mPtrDesciptorMatcher->match(nKptsDescriptors);
+    
+    // track from previous frames.
+    track(f, nKptsDescriptors, nOuterMatchResult);
+}
+
+
+void KeyPointManager::trackBySimulator(const Type::Frame& fCurFrame, PKVIO::KeyPointManager::TpOneFrameKptDescriptor& nKptsDescriptors,
+    TpDescriptorMatchResult& nInnerMatchResult, std::vector< PKVIO::KeyPointManager::TpDescriptorMatchResult >& nOuterMatchResult) 
+{
+    std::map< Type::TpFrameID, TpPtrCameraPose> nMapFrameID2CameraPose;
+    std::map<Type::TpMapPointID, Type::TpPtrMapPoint3D > nMapMapPointID2MapPoint3D;
+    //TpVecVisualMeasurement nVecVisualMeasurement;
+    //TpPtrCameraStereo nPtrCameraStereo;
+    
+    {
+        typedef cv::Vec3d TpDataPt;
+        static int nSzIteration = 1; ++nSzIteration;
+        std::vector<cv::Vec3d> nTranslation = {TpDataPt(0,0,0), TpDataPt(100,0,0), TpDataPt(100, 100, 0), TpDataPt(0, 100, 0)};
+        std::vector<TpPtrCameraPose> nTMatrix;
+        for(int nIdx=0,nSz=nTranslation.size();nIdx<nSz;++nIdx){
+            for(int nIdxSplit=0,nSzSplit=100;nIdxSplit<nSzSplit;++nIdxSplit){
+                auto nTrans = nTranslation[nIdx] + (nTranslation[(nIdx+1)%nSz]-nTranslation[nIdx])*(nIdxSplit*1.0/nSzSplit);
+                //nTranslation[nIdx];
+                cv::Matx44f nCamera = Type::cvtR33T31ToMatx44f(cv::Mat(cv::Matx33f::eye()), cv::Mat(cv::Matx31f(nTrans)));
+                nTMatrix.push_back(std::make_shared<TpCameraPose>(TpCameraPose(nCamera)));
+            }
+        }
+        
+        std::vector<cv::Vec3d> nVecMapPt3D = DebugManager::getMapPointUsedInSimulator();
+        int nSzMp=nVecMapPt3D.size();
+        
+        nMapMapPointID2MapPoint3D.clear();
+        //nVecVisualMeasurement.clear();
+        nMapFrameID2CameraPose.clear();
+        for(int nIdxMp=0;nIdxMp<nSzMp;++nIdxMp)
+            nMapMapPointID2MapPoint3D[nIdxMp] = std::make_shared<cv::Point3f>(cv::Point3f(nVecMapPt3D[nIdxMp]));
+        
+        auto FuncGenerateMeasure = [&](int nIdxIter, const Camera& nCamera, std::vector<cv::KeyPoint>& nVecKpt){
+            cv::Mat nInnerMat = nCamera.getInnerParam().getInnerMat64F();
+            cv::Mat nDistorMat = nCamera.getInnerParam().getDistorParam64F();
+            
+            cv::Matx44f nTpt = nTMatrix[nIdxIter%(int(nTMatrix.size()))]->getMatx44f().inv();
+            cv::Matx44f ncTw = nCamera.getCameraOuterParam().get()*nTpt;
+            //cv::Mat rvec, tvec;
+            //cout << "nT:" <<endl << ncTw<<endl;
+            //cv::Rodrigues(cv::Mat(ncTw), rvec, tvec);
+            //std::vector<cv::Vec2d> nVecVm; cv::Mat nMatVm;
+            //cv::projectPoints(cv::Mat(nVecMapPt3D), (rvec), (tvec), nInnerMat, nDistorMat, nMatVm);
+            for(int nIdx=0,nSz = nVecMapPt3D.size();nIdx<nSz;++nIdx){
+                cv::Vec3f nPtCam3D  = Type::project(ncTw, cv::Vec3f(nVecMapPt3D[nIdx]));
+                cv::Vec3f nPtCam = nPtCam3D/nPtCam3D(2);
+                cv::Vec3f nPtProj = cv::Matx33f(nInnerMat)*nPtCam;
+                nVecKpt.push_back(cv::KeyPoint(cv::Point2f(nPtProj(0),nPtProj(1)), 1));
+                
+                //cout << "Kpt: World|Came|Pixel-"<<nVecMapPt3D[nIdx]<<"|"<<nPtCam3D<<"|"<<nPtProj<<endl;
+            }
+        };
+        
+        auto FuncGenerateMeasureStereo = [&](int nIdxIter, std::vector<cv::KeyPoint>& nVecVmLeft, std::vector<cv::KeyPoint>& nVecVmRight){
+            //cout << "Simulate - Left View:"<<endl;
+            FuncGenerateMeasure(nIdxIter, mPtrCameraStereo->CameraLeft(), nVecVmLeft);
+            //cout << "Simulate - RightView:"<<endl;
+            FuncGenerateMeasure(nIdxIter, mPtrCameraStereo->CameraRight(), nVecVmRight);
+            
+        };
+        
+        nKptsDescriptors.mFrameIDLeft = nKptsDescriptors.mFrameIDRight = fCurFrame.FrameID();
+        FuncGenerateMeasureStereo(fCurFrame.FrameID(), nKptsDescriptors.mKeyPointsLeft, nKptsDescriptors.mKeyPointsRight);
+        nKptsDescriptors.mDescriptorsLeft.resize(nKptsDescriptors.mKeyPointsLeft.size());
+        nKptsDescriptors.mDescriptorsRight.resize(nKptsDescriptors.mKeyPointsRight.size());
+        
+        TpVecMatchResult nMatch;
+        for(int nIdxMp=0;nIdxMp<nSzMp;++nIdxMp){
+            nMatch.push_back(TpOneMatchResult(nIdxMp,nIdxMp, 0));
+        }
+        nInnerMatchResult = TpDescriptorMatchResult(fCurFrame.FrameID(),fCurFrame.FrameID(), nMatch, nSzMp, nSzMp);
+        if(fCurFrame.FrameID()>0){
+            nOuterMatchResult.push_back(TpDescriptorMatchResult(fCurFrame.FrameID()-1,fCurFrame.FrameID(), nMatch, nSzMp, nSzMp));
+        }
+    }   
+  
+}
+
+
+void KeyPointManager::setSimulator(bool bUseSimulator, Type::TpPtrCameraStereo nPtrCameraStereo) {
+    mBoolUseSimulator = bUseSimulator;
+    if(mBoolUseSimulator){
+        mPtrCameraStereo = nPtrCameraStereo;
+        cout << endl << "Info: Using bUseSimulator ..." << endl << endl;
+    }
 }
 
 }

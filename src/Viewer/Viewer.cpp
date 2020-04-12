@@ -168,10 +168,12 @@ void PKVIOMainWindow::initUi() {
     pBtnContinue  = new QPushButton("Continue");
     pBtnStop      = new QPushButton("Stop");
     pBtnClose     = new QPushButton("Close");
+    pCBXSimulator = new QCheckBox("Simulator");
     pVBLControl->addWidget(pBtnStart);
     pVBLControl->addWidget(pBtnContinue);
     pVBLControl->addWidget(pBtnStop);
     pVBLControl->addWidget(pBtnClose);
+    pVBLControl->addWidget(pCBXSimulator);
     pVBLControl->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));
 
     pWgtCtr->setFixedWidth(100);
@@ -189,16 +191,10 @@ void PKVIOMainWindow::initUi() {
         mPtrFrameImageWgt->setImage(mPtrVioSystem->getDispalyImage());
         mPtrGLViewer->addCameraPose(mPtrVioSystem->getCameraPoseCurFrame());
         //cout << "1000ms" <<endl;
-    } );
+    });
     
     connect(pBtnStart, &QPushButton::clicked, this, [&](){
-        pBtnContinue->setVisible(false);
-        pBtnStop->setVisible(true);
-        pBtnStop->setEnabled(true);
-        pBtnClose->setEnabled(true);
-        initVIO();
-        mPtrTimerVIO->setInterval(10);
-        mPtrTimerVIO->start();
+        newVIO();
     });
     connect(pBtnStop, &QPushButton::clicked, this, [&](){
         pBtnContinue->setVisible(true);
@@ -213,12 +209,20 @@ void PKVIOMainWindow::initUi() {
     connect(pBtnClose, &QPushButton::clicked, this, [&](){
         pBtnContinue->setVisible(false);
         pBtnStop->setVisible(true);
+        pBtnStop->setEnabled(false);
+        pBtnClose->setEnabled(false);
         mPtrTimerVIO->stop();
         mPtrVioSystem.reset();
         mPtrGLViewer->clear();
         mPtrFrameImageWgt->resetImage();
         mPtrGLViewer->update();
     });
+    
+    connect(pCBXSimulator, &QCheckBox::clicked, this, [&](){
+        if(!mPtrVioSystem)return;
+        newVIO();
+    });
+    
     /*
     */
     
@@ -227,6 +231,7 @@ void PKVIOMainWindow::initUi() {
     //mPtrGLViewer->setFixedSize();
     
     //this->update();
+    pBtnStart->click();
 }
 
 
@@ -247,7 +252,7 @@ void PKVIOMainWindow::initVIO() {
     }
     mPtrVioSystem = PKVIO::System::generateVIOSystem();
     
-    mPtrVioSystem->initialize();
+    mPtrVioSystem->initialize(pCBXSimulator->isChecked());
     mPtrVioSystem->setRunVIO(false);
 }
 
@@ -293,6 +298,17 @@ QImage mat2qim(const cv::Mat & mat, int nWidth=0, int nHeight = 0)
     return qim;
 }
 
+void PKVIOMainWindow::newVIO() {
+    pBtnContinue->setVisible(false);
+    pBtnStop->setVisible(true);
+    pBtnStop->setEnabled(true);
+    pBtnClose->setEnabled(true);
+    initVIO();
+    mPtrTimerVIO->setInterval(10);
+    mPtrTimerVIO->start();
+}
+
+
 QImage ImageWidget::getQImage() {
     return mat2qim(getImage(), this->width(), this->height());
 }
@@ -319,11 +335,15 @@ void CameraPoseGLViewer::dodraw() {
     glPointSize(mPointSize);
     //glBegin(GL_POINTS);
     glBegin(GL_LINE_STRIP);
-    glColor3f(1.0,1.0,0.0);
+    // R,G,B
+    glColor3f(1.0,1.0,0.0); // yellow
 
     for(size_t i=0, iend=nSzCameraPose; i<iend;i++)
     {
         auto p = mVecPose[i];
+        if(i>=iend-2){
+            glColor3f(1.0,0.0,0.0);
+        }
         glVertex3f(p(0),p(1),p(2));
     }
     

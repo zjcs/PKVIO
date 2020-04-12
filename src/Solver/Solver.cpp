@@ -2,7 +2,7 @@
 
 #include "g2o/core/block_solver.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/types/sim3/types_seven_dof_expmap.h""
+#include "g2o/types/sim3/types_seven_dof_expmap.h"
 #include "g2o/solvers/eigen/linear_solver_eigen.h"
 #include "g2o/types/sba/types_six_dof_expmap.h"
 #include "g2o/core/robust_kernel_impl.h"
@@ -11,6 +11,7 @@
 #include <eigen3/Eigen/StdVector>
 
 #include "Converter.h"
+#include <opencv2/calib3d.hpp>
 /*
 */
 
@@ -38,7 +39,6 @@ void Solver::initMapPoints(const std::map< PKVIO::Type::TpMapPointID, PKVIO::Typ
 
 void Solver::addMeasurement(const TpVisualMeasurement& nVisualMeasurement) 
 {
-    
 }
 
 void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2CameraPose,
@@ -113,10 +113,10 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
             rk->setDelta(thHuber2D);
         }
 
-        e->fx = nPtrCameraStereo->getCameraInnerParam().getfx();
-        e->fy = nPtrCameraStereo->getCameraInnerParam().getfy();
-        e->cx = nPtrCameraStereo->getCameraInnerParam().getcx();
-        e->cy = nPtrCameraStereo->getCameraInnerParam().getcy();
+        e->fx = nPtrCameraStereo->getInnerParam().getfx();
+        e->fy = nPtrCameraStereo->getInnerParam().getfy();
+        e->cx = nPtrCameraStereo->getInnerParam().getcx();
+        e->cy = nPtrCameraStereo->getInnerParam().getcy();
 
         optimizer.addEdge(e);
     }
@@ -148,6 +148,50 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         *nPtrMapPoint3D = Converter::toCvPoint3f(vPoint->estimate());
     }
     
+}
+
+
+void Solver::solveBySimulator(cv::Mat nInnerMat, TpPtrCameraStereo nPtrCameraStereo) 
+{
+    std::map< Type::TpFrameID, TpPtrCameraPose> nMapFrameID2CameraPose;
+    std::map<Type::TpMapPointID, Type::TpPtrMapPoint3D > nMapMapPointID2MapPoint3D;
+    TpVecVisualMeasurement nVecVisualMeasurement;
+    //TpPtrCameraStereo nPtrCameraStereo;
+    
+    {
+        typedef cv::Vec3d TpDataPt;
+        static int nSzIteration = 1; ++nSzIteration;
+        std::vector<cv::Vec3d> nTranslation = {TpDataPt(0,0,0), TpDataPt(100,0,0), TpDataPt(100, 100, 0), TpDataPt(0, 100, 0)};
+        std::vector<cv::Vec3d> nVecMapPt3D = {
+            TpDataPt(0,0,100),TpDataPt(100,0,100),TpDataPt(100,100,100),TpDataPt(0,100,100),
+            TpDataPt(20,20,200),TpDataPt(80,20,200),TpDataPt(80,80,200),TpDataPt(20,80,200),
+        };
+        
+        nMapMapPointID2MapPoint3D.clear();
+        nVecVisualMeasurement.clear();
+        nMapFrameID2CameraPose.clear();
+        for(int nIdxMp=0,nSzMp=nVecMapPt3D.size();nIdxMp<nSzMp;++nIdxMp)
+            nMapMapPointID2MapPoint3D[nIdxMp] = std::make_shared<cv::Point3f>(cv::Point3f(nVecMapPt3D[nIdxMp]));
+        
+        //cv::Mat nInnerMat = mPtrDataset->getPtrCamera()->CameraLeft().getInnerParam().getInnerMat64F();
+        for(int nIdxIter=0;nIdxIter<nSzIteration;++nIdxIter){
+            cv::Vec3d nTranslat = nTranslation[nIdxIter%(int)nTranslation.size()];
+            cv::Matx44f nCamera = Type::cvtR33T31ToMatx44f(cv::Mat(cv::Matx33f::eye()), cv::Mat(cv::Matx31f(nTranslat)));
+            std::vector<cv::Vec2d> nVecVm;
+            cv::projectPoints(nVecMapPt3D, TpDataPt(), nTranslat, nInnerMat, cv::Mat(), nVecVm);
+            nMapFrameID2CameraPose[nIdxIter] = std::make_shared<TpCameraPose>(TpCameraPose(nCamera));
+
+            for(int nIdxMp=0,nSzMp=nVecMapPt3D.size();nIdxMp<nSzMp;++nIdxMp){
+                TpVisualMeasurement nVm;
+                nVm.mFrameID = nIdxIter;
+                nVm.mKeyPoint = cv::KeyPoint(cv::Point2f(nVecVm[nIdxMp]), 1);
+                nVm.mMapPointID = nIdxMp;
+                nVecVisualMeasurement.push_back(nVm);
+            }
+        }
+    }   
+    
+    solve(nMapFrameID2CameraPose, nMapMapPointID2MapPoint3D, nVecVisualMeasurement, nPtrCameraStereo);
 }
 
 }

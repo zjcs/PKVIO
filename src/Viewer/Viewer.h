@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QSpacerItem>
 #include <QTimer>
 #include <QPaintEvent>
@@ -76,6 +77,8 @@ private:
     void runVIO(void);
     
     void initVIO(void);
+    
+    void newVIO(void);
 private:
     PKVIO::System::TpPtrVIOSystem   mPtrVioSystem;
     ImageWidget*                    mPtrFrameImageWgt;
@@ -85,6 +88,7 @@ private:
     QPushButton* pBtnContinue;
     QPushButton* pBtnStop;
     QPushButton* pBtnClose; 
+    QCheckBox*   pCBXSimulator;
 };
 
 }

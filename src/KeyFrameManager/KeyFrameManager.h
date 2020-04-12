@@ -42,7 +42,7 @@ public:
                         TpMapPointID nMapPointID = mMapPointIDGenerator.create();
                         if(nMapPointID!=(TpMapPointID)mMapFromMapPointID2KptID.size()) 
                             throw;
-                        mMapFromMapPointID2KptID.push_back(TpMapPoint(nKptID));
+                        mMapFromMapPointID2KptID.push_back(TpMapPoint(nMapPointID, nKptID));
                         
                         if((int)mMapFromKptID2MapPointID.capacity() <= nKptID){
                             mMapFromKptID2MapPointID.reserve(2*mMapFromKptID2MapPointID.capacity());
@@ -76,8 +76,9 @@ public:
                     }
     
     
-    TpKeyPointID    getKptID(const TpMapPointID nMapPointID){return mMapFromMapPointID2KptID[nMapPointID].getKeyPointID();}
-    int             sizeMapPointID(void){ return (int)mMapFromMapPointID2KptID.size(); }
+    TpKeyPointID    getKptID(const TpMapPointID nMapPointID)const{return mMapFromMapPointID2KptID[nMapPointID].getKeyPointID();}
+    int             sizeMapPointID(void)const{ return (int)mMapFromMapPointID2KptID.size(); }
+    TpVecMapPointID getMapPointIDsGeneratedByFrame(const TpFrameID nFrameID) const;
 private:
     Type::IDGenerator<TpMapPointID>     mMapPointIDGenerator;
     vector<TpMapPoint>                  mMapFromMapPointID2KptID;
@@ -119,6 +120,15 @@ public:
                                         }
     inline int                          size(void)const{return mVecFrameKptIDMapPointPair.size();}
     inline const TpKptIDMapPointPair&   getKptIDMapPointPair(const int nIndexPair)const{return mVecFrameKptIDMapPointPair[nIndexPair];}
+    
+    map<TpKeyPointID, TpMapPointID>     getMapKptID2MapPointID(void){
+                                            map<TpKeyPointID, TpMapPointID> nMapKeyPointID2MapPointID;
+                                            for(int nIdxPair=0,nSzPairs=size();nIdxPair<nSzPairs;++nIdxPair){
+                                                const KeyFrameManager::TpKptIDMapPointPair& nPair = getKptIDMapPointPair(nIdxPair);
+                                                nMapKeyPointID2MapPointID[nPair.mKptID] = nPair.mMapPointID;
+                                            }
+                                            return nMapKeyPointID2MapPointID;
+                                        }
 protected:
     TpFrameID                   mFrameID;
     vector<TpKptIDMapPointPair> mVecFrameKptIDMapPointPair;

@@ -23,6 +23,11 @@ public:
     
     TpVecCoVisFrameIDs          getCoVisFrameIDs(const TpFrameID nFrameIDQuery) const;
     
+    void                        getCoVis(const TpFrameID nFrameIDFrom, const TpFrameID nFrameIDTo, TpVecKeyPointID& nCovisKptID, TpVecMatchResult& nCoVisMatch);
+    
+    TpVecMatchResult            getCoVis(const TpFrameID nFrameIDFrom, const TpFrameID nFrameIDTo);
+    void                        getCoVis(const TpFrameID nFrameIDFrom, const TpFrameID nFrameIDTo, TpVecMatchResult& nCoVisMatch);
+    
     inline KeyPointManager::TpOneFrameIDManager& 
                                 getCurrentFrameKptIDMgr(void){
                                     throw;
@@ -46,9 +51,7 @@ public:
                                         
                                         const TpFrameID nFrameIDTo  = getFrameIDTemplate(pNodeTo->getData());
                                         
-                                        TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
-                                        mKeyPointIDManager.getAllKptIDsAndIdexs(nFrameIDTo, nVecKptIDs, nVecKptIndexs);
-                                        f(nFrameIDTo, nVecKptIDs, nVecKptIndexs);
+                                        f(nFrameIDTo);
                                     };
                                     
                                     auto FuncSkipNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
