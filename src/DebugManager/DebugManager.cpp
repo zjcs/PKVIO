@@ -25,12 +25,12 @@ DebugInfoConfig& getDebugInfoConfig()
 }
 
 int getMinimumKptNumberToKeepTrackingWell(void){
+    return 30;
     return 1;
-    // return 30;
 }
 
 int getMinimumKptNumberToCreateKFOtherwiseLost(void){
-    //return 50;
+    return 50;
     return 0;
 }
 
@@ -44,6 +44,10 @@ std::vector<cv::Vec3d> getMapPointUsedInSimulator(void){
         , TpDataPt(20,20,nZ2),TpDataPt(80,20,nZ2),TpDataPt(80,80,nZ2),TpDataPt(20,80,nZ2),
     };
     return nVecMapPt3D;
+}
+
+int getMaxCoVisLength(void){
+    return 10;
 }
 
 }

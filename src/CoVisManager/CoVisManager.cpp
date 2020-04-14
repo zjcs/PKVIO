@@ -124,7 +124,7 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
             if(!Type::isInvalideKeyPointID(mKptIDInPrev)){
                 // prev kpt has got a ID, copy it to its corresponding kpts in current frame.
                 TpKeyPointID& mKptIDInCur = mCurFrameIDMgr.KeyPointID(nKptIdxInCur);
-                if(!Type::isInvalideFrameID(mKptIDInCur)) { 
+                if(Type::isValideKeyPointID(mKptIDInCur)) { 
                     //TODO : need merge keypoint
                     cout << "Warning: need merge keypoint or bug in code. exit"<<endl;
                     throw;
@@ -200,17 +200,19 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const 
         const int nSzCosVisKptIDsFT = mKeyPointIDManager.sizeCoVisKptIDs(nFrameIDFrom, nFrameIDTo);
         
         // not visit pNodeTo from this edge between pNodeFrom and pNodeTo;
-        if((nSzCosVisKptIDsFT<60 || nSzCosVisKptIDs<50) || nSetFrameIDsDirectAdjoinToCurFrame.count(nFrameIDTo)){
-            return;
-        }
+        if(nSetFrameIDsDirectAdjoinToCurFrame.count(nFrameIDTo))return;
+        //if((nSzCosVisKptIDsFT<60 || nSzCosVisKptIDs<50)){ return; }
         
         //cout << "add covis(w)"<< nSzCosVisKptIDs <<" between "<< nFrameIDCur << "->" << nFrameIDTo << " via " << nFrameIDFrom << "->"<< nFrameIDTo <<endl;
         mPtrCoVisGraph->buildCoVisBetween(pNodeTo, pNodeCurFrame, CoVisFramePairAndWeight(nFrameIDTo, nFrameIDCur, nSzCosVisKptIDs));
         
     };
     auto FuncSkipNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
+        const TpFrameID nFrameIDCur = getFrameIDTemplate(pNodeCurFrame->getData());
         const TpFrameID nFrameIDTo = pNodeTo->getData().FrameID();
         // always skip some node.
+        if(nFrameIDCur - nFrameIDTo>DebugManager::getMaxCoVisLength())
+            return true;
         return false;
     };
     mPtrCoVisGraph->BreadthFristSearch(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);    

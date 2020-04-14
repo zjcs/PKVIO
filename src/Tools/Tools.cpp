@@ -8,7 +8,7 @@ bool triangulation(const cv::Point2f& Pl2D, const cv::Point2f& Pr2D, const float
 {
     float nErrorParallax = -(Pr2D.x - Pl2D.x);  // parallax is negative, converted to positive here.
     //bool  bSuccess = nErrorParallax > 0.5;
-    if(nErrorParallax < 1e-5)   // filter the far kpt
+    if(nErrorParallax < 0.5)   // filter the far kpt
         return false;
     nDepthInLeftView = fx * nBaseline / nErrorParallax;
     return true;

@@ -7,14 +7,13 @@
 #include "../Tools/Tools.h"
 #include "../Solver/Solver.h"
 
-
-
 namespace PKVIO {
 namespace System {
 
 TpPtrVIOSystem generateVIOSystem(void){
   return std::make_shared<System>();
 };
+
     
 System::~System(){
     exit();
@@ -207,7 +206,7 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                                                  nKptLeftUndistorNorm.pt.y*nDepthInLeftView, nDepthInLeftView);
                         auto nMp3DWorld = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID())->cvtToWorld(nMp3DLeftView);
                         nMp.initMapPoint3D(cv::Point3f(nMp3DWorld));
-                        //cout << "Pixel Left|Right - PtInWorld(LeftView): " << nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt << "  - "<< nMp3DWorld <<endl;
+                        cout << "Pixel Left|Right - PtInWorld(LeftView): " << nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt << "  - "<< nMp3DWorld <<endl;
                     }
                 }
                 //cout <<endl;
@@ -269,6 +268,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     map<TpKeyPointID, TpMapPointID> nMapKeyPointID2MapPointID = nFrameKptIDMapPointPair.getMapKptID2MapPointID();
     vector<KeyFrameManager::TpKptIDMapPointPairWithFrameID> nVecKptIDMapPointPairWithFrameID;
     auto FuncGetCoVisWithCurrentFrame = [&](const TpFrameID nCosVisFrmID) {
+            if(nFrameIDCur - nCosVisFrmID>DebugManager::getMaxCoVisLength()) return;
+        
             TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
             mCoVisMgr.OneFrameKptIDMgrByFrameID(nCosVisFrmID).getAllKptIDsAndIdexs(nVecKptIDs, nVecKptIndexs);
             for(int nIdxKptID=0,nSzKptIDs=nVecKptIDs.size();nIdxKptID<nSzKptIDs;++nIdxKptID){
@@ -290,7 +291,7 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     
     // Through nVecKptIDMapPointPairWithFrameID get measurment Info: camera pose 6D, keypoint pixel 2D, mapoint 3D.
     // TODO
-    map<TpFrameID, cv::Mat> nMapFrameID2FrameImage;
+    map<TpFrameID, cv::Mat>             nMapFrameID2FrameImage;
     map<TpFrameID, TpPtrCameraPose>     nMapFrameID2CameraPose;
     map<TpMapPointID, TpPtrMapPoint3D>  nMapMapPointID2MapPoint3D;
     Solver::TpVecVisualMeasurement      nVecVisualMeasurement;
@@ -304,6 +305,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         if(nMapMapPointID2MapPoint3D.find(nMeasurement.mMapPointID) == nMapMapPointID2MapPoint3D.end()){
             //nMapMapPointID2MapPoint3D[nMeasurement.mMapPointID] = TpMapPoint3D();
             const KeyFrameManager::TpMapPoint& nMp = mPtrKeyFrameMgr->getMapPointIDManager().MapPoint(nMeasurement.mMapPointID);
+            if(!nMp.getMapPoint3DValid())
+                continue;
             nMapMapPointID2MapPoint3D[nMeasurement.mMapPointID] = nMp.getMapPoint3D();
         }
     }
@@ -319,6 +322,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
             cv::KeyPoint nKeyPoint = mKeyPointMgr.getFrameKptsDescriptorHistory().get(nFrameID).mKeyPointsLeft[nMeasurement.mKptIndex];
             //TpMapPoint3D nMapPoint = mPtrKeyFrameMgr->getMapPointIDManager().MapPoint(nMeasurement.mMapPointID).MapPoint3D();
             cv::KeyPoint nKeyPointUnDistor = mPtrDataset->getPtrCamera()->CameraLeft().getInnerParam().undistor(nKeyPoint);
+            if(nMapMapPointID2MapPoint3D.find(nMeasurement.mMapPointID)==nMapMapPointID2MapPoint3D.end())
+                continue;
             
             Solver::TpVisualMeasurement nVisualMeasurement;
             nVisualMeasurement.mFrameID     = nFrameID;

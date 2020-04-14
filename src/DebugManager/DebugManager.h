@@ -17,6 +17,8 @@ int                 getMinimumKptNumberToCreateKFOtherwiseLost(void);
 
 std::vector<cv::Vec3d> getMapPointUsedInSimulator(void);
 
+int                 getMaxCoVisLength(void);
+
 
 class DebugManager 
 {

@@ -211,11 +211,7 @@ void PKVIOMainWindow::initUi() {
         pBtnStop->setVisible(true);
         pBtnStop->setEnabled(false);
         pBtnClose->setEnabled(false);
-        mPtrTimerVIO->stop();
-        mPtrVioSystem.reset();
-        mPtrGLViewer->clear();
-        mPtrFrameImageWgt->resetImage();
-        mPtrGLViewer->update();
+        clear();
     });
     
     connect(pCBXSimulator, &QCheckBox::clicked, this, [&](){
@@ -248,7 +244,7 @@ void PKVIOMainWindow::initVIO() {
     cout << "Version Infor: " << PKVIO::Version::version() << endl;
     
     if(mPtrVioSystem){
-        mPtrVioSystem.reset();
+        clear();
     }
     mPtrVioSystem = PKVIO::System::generateVIOSystem();
     
@@ -297,6 +293,16 @@ QImage mat2qim(const cv::Mat & mat, int nWidth=0, int nHeight = 0)
     QImage qim((const unsigned char*)nImgRGB.data, nImgRGB.cols, nImgRGB.rows, nImgRGB.step, QImage::Format_RGB888);
     return qim;
 }
+
+void PKVIOMainWindow::clear() {
+
+    mPtrTimerVIO->stop();
+    mPtrVioSystem.reset();
+    mPtrGLViewer->clear();
+    mPtrFrameImageWgt->resetImage();
+    mPtrGLViewer->update();
+}
+
 
 void PKVIOMainWindow::newVIO() {
     pBtnContinue->setVisible(false);

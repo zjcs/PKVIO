@@ -79,6 +79,8 @@ private:
     void initVIO(void);
     
     void newVIO(void);
+    
+    void clear(void);
 private:
     PKVIO::System::TpPtrVIOSystem   mPtrVioSystem;
     ImageWidget*                    mPtrFrameImageWgt;

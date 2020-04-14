@@ -71,6 +71,7 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
 
 EnSLAMState KeyFrameManager::updateTrackState(int nCountSumTrackKpts, int nCountKptsOnThisFrame) {
     //
+    cout << "TrackState: WithMapID|Kpts -" << nCountSumTrackKpts <<"|"<<nCountKptsOnThisFrame<<endl;
     EnSLAMState eSLAMState = EnUnKnown;
     std::string sSLAMState;
     if(nCountSumTrackKpts< DebugManager::getMinimumKptNumberToKeepTrackingWell()) {
