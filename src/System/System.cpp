@@ -132,7 +132,6 @@ void System::setRunVIOSimple(bool bRunAllFrame)
             mPtrCameraPoseCurFrame = mPtrKeyFrameMgr->generateOneFrameCameraPose(mCurFrame);
             if(mFrameMatchResult.sizeOuterFrameDescriptorMatchResult()==0)
                 continue;
-            static map<TpFrameID, map<TpKeyPointIndex, cv::Point3f>> nMapMap3D;
             auto& nStereoFramePrev = mKeyPointMgr.getStereoFrameHistory().get(nFrameIDCur-1);
             
             // track;
@@ -152,7 +151,7 @@ void System::setRunVIOSimple(bool bRunAllFrame)
                         const TpOneMatchResult& nMatch = mMatchResultTrack.getMatch()[nIdxMatch];
                         auto IterPt3D = nMap3DPrev.find(nMatch.queryIdx);
                         if(IterPt3D!=nMap3DPrev.end()){
-                            nPt3DPrev.push_back(IterPt3D->second);
+                            nPt3DPrev.push_back(*(IterPt3D->second));
                             nPt2DCur.push_back(mKptsDescriptors.mKeyPointsLeft[nMatch.trainIdx].pt);
                             nMap3DCur[nMatch.trainIdx] = IterPt3D->second;
                         }
@@ -241,7 +240,7 @@ void System::setRunVIOSimple(bool bRunAllFrame)
                         cv::Vec3f nPt3DNorm = cv::Vec3f(nPt4D(0), nPt4D(1), nPt4D(2))/nPt4D(3);
                         //cout << nPt4D << nPt3DNorm <<endl;
                         int nKptIdx = mMatchResultTrack.getMatch()[nFilteredMatchIdx2InitMatchIdx[nIdx]].trainIdx;
-                        nMap3DCur[nKptIdx] = cv::Point3f(nPt3DNorm);
+                        nMap3DCur[nKptIdx] = std::make_shared<TpMapPoint3D>(cv::Point3f(nPt3DNorm));
                     }
                     //cv::waitKey();
                 }
@@ -294,7 +293,6 @@ void System::setRunVIOSimpleStereo(bool bRunAllFrame)
             mPtrCameraPoseCurFrame = mPtrKeyFrameMgr->generateOneFrameCameraPose(mCurFrame);
             if(mFrameMatchResult.sizeOuterFrameDescriptorMatchResult()==0)
                 continue;
-            static map<TpFrameID, map<TpKeyPointIndex, TpPtrMapPoint3D>> nMapMap3D;
             auto& nStereoFramePrev = mKeyPointMgr.getStereoFrameHistory().get(nFrameIDCur-1);
             
             // track;
@@ -356,14 +354,16 @@ void System::setRunVIOSimpleStereo(bool bRunAllFrame)
                         
                         bStateTrackSuccess = true;
                     }else{
+                        std::vector<cv::Point3f> nPt3DPrev2;
                         for(int nIdx=0,nSz = nPt3DPrev.size();nIdx<nSz;++nIdx){
+                            nPt3DPrev2.push_back(*nPt3DPrev[nIdx]);
                             cout << "Mp3D:" << nPt3DPrev[nIdx]<<endl;
                         }
                         for(int nIdx=0,nSz = nPt3DPrev.size();nIdx<nSz;++nIdx){
                             cout << "Pt2D:" << nPt2DCur[nIdx]<<endl;
                         }
                         cv::Mat RMat,rvec, tvec; cv::Mat mask;
-                        bool bPnpState = cv::solvePnPRansac(nPt3DPrev, nPt2DCur,nCameraInnerLeft.getInnerMat(),
+                        bool bPnpState = cv::solvePnPRansac(nPt3DPrev2, nPt2DCur,nCameraInnerLeft.getInnerMat(),
                                         nCameraInnerLeft.getDistorParam(), rvec, tvec, false, 100,  8, 0.9, mask, cv::SOLVEPNP_P3P);
                         bStateTrackSuccess = bPnpState;
                         if(bPnpState){

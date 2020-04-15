@@ -290,7 +290,7 @@ void KeyPointManager::trackBySimulator(const Type::Frame& fCurFrame, PKVIO::KeyP
     
     {
         typedef cv::Vec3d TpDataPt;
-        static int nSzIteration = 1; ++nSzIteration;
+        ++nSzIteration;
         std::vector<cv::Vec3d> nTranslation = {TpDataPt(0,0,0), TpDataPt(100,0,0), TpDataPt(100, 100, 0), TpDataPt(0, 100, 0)};
         std::vector<TpPtrCameraPose> nTMatrix;
         for(int nIdx=0,nSz=nTranslation.size();nIdx<nSz;++nIdx){

@@ -188,14 +188,14 @@ void PKVIOMainWindow::initUi() {
     pLytCoVis->addWidget(pLblCoVis);
     pLytCoVis->addWidget(pLetCoVis);
     
-    pCBXPnPSolver = new QCheckBox("Use PnP");
-    pCBXG2OSolver = new QCheckBox("Use G2O");
+    pCBXPnPSolver = new QCheckBox("Incre-PnP");
+    pCBXG2OSolver = new QCheckBox("Incre-G2O");
     QButtonGroup* pBgpSolver = new QButtonGroup(this);
     pBgpSolver->addButton(pCBXPnPSolver);
     pBgpSolver->addButton(pCBXG2OSolver);
     pCBXMapPointUpdate = new QCheckBox("Update MapPoint");
     
-    pCBXCoVisMgr = new QCheckBox("G2O+CoVis");
+    pCBXCoVisMgr = new QCheckBox("BA(G2O+CoVis)");
     pCBXMapPointFixed = new QCheckBox("Fix MapPoint");
     
     pVBLControl->addWidget(pBtnStart);
@@ -263,6 +263,7 @@ void PKVIOMainWindow::initUi() {
         pCBXMapPointFixed->setChecked(true);
         pCBXMapPointFixed->setEnabled(false);
         
+        pCBXCoVisMgr->setChecked(false);
         pCBXCoVisMgr->setEnabled(false);
         pLetCoVis->setText(QString("%1").arg(1));
         pLetCoVis->setEnabled(false);

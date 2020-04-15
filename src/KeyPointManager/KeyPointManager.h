@@ -49,6 +49,7 @@ protected:
     
     void                        trackBySimulator(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
                                       TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult);
+    int                         nSzIteration = 1;
     
     void                        track(const Frame& fCurFrame, const TpOneFrameKptDescriptor& fCurFrameKptDescriptor,
                                 vector<TpDescriptorMatchResult>& nOuterMatchResult);
