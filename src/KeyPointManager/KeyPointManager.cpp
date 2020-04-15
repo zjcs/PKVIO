@@ -294,7 +294,7 @@ void KeyPointManager::trackBySimulator(const Type::Frame& fCurFrame, PKVIO::KeyP
         std::vector<cv::Vec3d> nTranslation = {TpDataPt(0,0,0), TpDataPt(100,0,0), TpDataPt(100, 100, 0), TpDataPt(0, 100, 0)};
         std::vector<TpPtrCameraPose> nTMatrix;
         for(int nIdx=0,nSz=nTranslation.size();nIdx<nSz;++nIdx){
-            for(int nIdxSplit=0,nSzSplit=100;nIdxSplit<nSzSplit;++nIdxSplit){
+            for(int nIdxSplit=0,nSzSplit=DebugManager::DebugControl().mCountSegment;nIdxSplit<nSzSplit;++nIdxSplit){
                 auto nTrans = nTranslation[nIdx] + (nTranslation[(nIdx+1)%nSz]-nTranslation[nIdx])*(nIdxSplit*1.0/nSzSplit);
                 //nTranslation[nIdx];
                 cv::Matx44f nCamera = Type::cvtR33T31ToMatx44f(cv::Mat(cv::Matx33f::eye()), cv::Mat(cv::Matx31f(nTrans)));
@@ -302,7 +302,7 @@ void KeyPointManager::trackBySimulator(const Type::Frame& fCurFrame, PKVIO::KeyP
             }
         }
         
-        std::vector<cv::Vec3d> nVecMapPt3D = DebugManager::getMapPointUsedInSimulator();
+        std::vector<cv::Vec3d> nVecMapPt3D = DebugManager::getVirtualPointInSimulator();
         int nSzMp=nVecMapPt3D.size();
         
         nMapMapPointID2MapPoint3D.clear();

@@ -8,6 +8,9 @@ namespace PKVIO
 namespace DebugManager 
 {
     
+static bool gBoolUseSimulator = false;
+static TpDebugControl gDebugControl;
+    
 void logDebugMatchInfo(const DebugMatchInfo& nDebugMatchInfo)
 {
     nDebugMatchInfo.log();
@@ -25,16 +28,18 @@ DebugInfoConfig& getDebugInfoConfig()
 }
 
 int getMinimumKptNumberToKeepTrackingWell(void){
+    if(getUseSimulator())
+        return 1;
     return 30;
-    return 1;
 }
 
 int getMinimumKptNumberToCreateKFOtherwiseLost(void){
+    if(getUseSimulator())
+        return getVirtualPointInSimulator().size();
     return 50;
-    return 0;
 }
 
-std::vector<cv::Vec3d> getMapPointUsedInSimulator(void){
+std::vector<cv::Vec3d> getVirtualPointInSimulator(void){
     typedef cv::Vec3d TpDataPt;
     int nZ1 = 100;
     int nZ2 = 200;
@@ -48,6 +53,17 @@ std::vector<cv::Vec3d> getMapPointUsedInSimulator(void){
 
 int getMaxCoVisLength(void){
     return 10;
+}
+
+void setUseSimulator(bool bUseSimulator){
+    gBoolUseSimulator = bUseSimulator;
+}
+bool getUseSimulator(void){
+    return gBoolUseSimulator;
+}
+
+TpDebugControl& DebugControl(void){
+    return gDebugControl;
 }
 
 }

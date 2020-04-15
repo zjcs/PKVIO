@@ -27,12 +27,15 @@ public:
     
     void setRunVIO(bool bRunAllFrame = true);
     
-    void initialize(bool bUseSimulator = false);
+    void setRunVIOSimple(bool bRunAllFrame = true);
+    void setRunVIOSimpleStereo(bool bRunAllFrame = true);
+    
+    void initialize(const DebugManager::TpDebugControl& nDbgCtrl);
     void doexec(void);
     void exit(void);
     
-    cv::Mat getDispalyImage(void){return mTrackingImageCurFrame;}
-    cv::Vec3f getCameraPoseCurFrame(void){return mPtrCameraPoseCurFrame->getPosition();}
+    cv::Mat     getDispalyImage(void){return mTrackingImageCurFrame;}
+    cv::Vec3f   getCameraPoseCurFrame(void){return mPtrCameraPoseCurFrame->getPosition();}
 protected:
     void exec(void);
     
@@ -41,7 +44,7 @@ private:
     
     void debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
 private:
-    TpFuncDoExec mPtrFuncDoExec;
+    TpFuncDoExec                        mPtrFuncDoExec;
     DatasetManager::DatasetInterfacePtr mPtrDataset;
     KeyPointManager::KeyPointManager    mKeyPointMgr;
     CoVisManager::CoVisManager          mCoVisMgr;
@@ -50,6 +53,8 @@ private:
     bool                                mbRunAllFrame;
     cv::Mat                             mTrackingImageCurFrame;
     TpPtrCameraPose                     mPtrCameraPoseCurFrame;
+    
+    DebugManager::TpDebugControl*       mPtrDbgCtrl;
 };
 
 typedef std::shared_ptr<System> TpPtrVIOSystem;

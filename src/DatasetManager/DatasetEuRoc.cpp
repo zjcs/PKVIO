@@ -55,6 +55,10 @@ string DatasetEuRoc::getIMUFolder() {
 }
 
 void DatasetEuRoc::getImage(int nIndexToRead, cv::Mat& mLeft, cv::Mat& mRight) {
+    //nIndexToRead*=10;
+    static int nSkip = 0; ++nSkip;
+    //nIndexToRead += 1100 + nSkip*0;
+    
     string sLeftFile = getFrameAbsFileNmae(nIndexToRead, true);
     mLeft = cv::imread(sLeftFile, cv::IMREAD_GRAYSCALE);
     string sRightFile = getFrameAbsFileNmae(nIndexToRead, false);

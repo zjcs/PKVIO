@@ -2,6 +2,7 @@
 
 #include "g2o/core/block_solver.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
+#include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/types/sim3/types_seven_dof_expmap.h"
 #include "g2o/solvers/eigen/linear_solver_eigen.h"
 #include "g2o/types/sba/types_six_dof_expmap.h"
@@ -12,8 +13,9 @@
 
 #include "Converter.h"
 #include <opencv2/calib3d.hpp>
-/*
-*/
+
+#include "../DebugManager/DebugManager.h"
+#include "../Tools/Timer.h"
 
 namespace PKVIO {
 namespace Solver {
@@ -45,6 +47,8 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
                    std::map<Type::TpMapPointID, Type::TpPtrMapPoint3D >& nMapMapPointID2MapPoint3D,
                    const TpVecVisualMeasurement& nVecVisualMeasurement, const TpPtrCameraStereo nPtrCameraStereo) 
 {
+    Timer::Timer nTimerSolver("G2OSolver", true);
+    
     int     nIterations = 10;
     bool    bRobust     = true;
     const float thHuber2D = sqrt(5.99);
@@ -62,6 +66,11 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(
         g2o::make_unique<g2o::BlockSolver_6_3>(std::move(nPtrlinearSolver))
     );
+#if 0
+    g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton(
+        g2o::make_unique<g2o::BlockSolver_6_3>(std::move(nPtrlinearSolver))
+    );
+#endif
     optimizer.setAlgorithm(solver);
     
     unsigned int nGraphNodeID = 0;
@@ -88,6 +97,7 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         const int id = nMapPointID+nGraphNodeID+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
+        vPoint->setFixed(DebugManager::DebugControl().mBoolMapPointFixed);
         optimizer.addVertex(vPoint);
         
         cout << "MpPnt ID-Value: " << nMapPointID << " - " << nMapPoint3D << endl;
@@ -145,13 +155,15 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         nPtrCameraPose->setMatx44f(cv::Matx44f(Converter::toCvMat(SE3quat)));
     }
 
-    //Points
-    for(auto Iter=nMapMapPointID2MapPoint3D.begin(),EndIter=nMapMapPointID2MapPoint3D.end();Iter!=EndIter;++Iter){
-        const TpMapPointID nMapPointID = Iter->first;
-        TpMapPoint3D nMapPoint3D = *(Iter->second.get());
-        TpPtrMapPoint3D nPtrMapPoint3D = Iter->second;
-        g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(nMapPointID+nGraphNodeID+1));
-        *nPtrMapPoint3D = Converter::toCvPoint3f(vPoint->estimate());
+    if(!DebugManager::DebugControl().mBoolMapPointFixed && DebugManager::DebugControl().mBoolUpdateMapPoint){
+        //Points
+        for(auto Iter=nMapMapPointID2MapPoint3D.begin(),EndIter=nMapMapPointID2MapPoint3D.end();Iter!=EndIter;++Iter){
+            const TpMapPointID nMapPointID = Iter->first;
+            TpMapPoint3D nMapPoint3D = *(Iter->second.get());
+            TpPtrMapPoint3D nPtrMapPoint3D = Iter->second;
+            g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(nMapPointID+nGraphNodeID+1));
+            *nPtrMapPoint3D = Converter::toCvPoint3f(vPoint->estimate());
+        }
     }
     
 }

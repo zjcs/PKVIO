@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QLineEdit>
 #include <QSpacerItem>
 #include <QTimer>
 #include <QPaintEvent>
@@ -52,6 +53,8 @@ public:
     virtual void dodraw(void) override;
     void         clear(void){mVecPose.clear(); setUpdateDisplay(true);}
 private:
+    void drawVirtualPointInSimulator(void);
+    
     std::vector<cv::Vec3f> mVecPose;
 };
 
@@ -81,6 +84,7 @@ private:
     void newVIO(void);
     
     void clear(void);
+    
 private:
     PKVIO::System::TpPtrVIOSystem   mPtrVioSystem;
     ImageWidget*                    mPtrFrameImageWgt;
@@ -91,6 +95,14 @@ private:
     QPushButton* pBtnStop;
     QPushButton* pBtnClose; 
     QCheckBox*   pCBXSimulator;
+    QCheckBox*   pCBXPnPSolver;
+    QCheckBox*   pCBXG2OSolver;
+    QCheckBox*   pCBXCoVisMgr;
+    QCheckBox*   pCBXMapPointFixed;
+    QCheckBox*   pCBXMapPointUpdate;
+    QLineEdit*   pLetSegements;
+    QLineEdit*   pLetCoVis;
+    DebugManager::TpDebugControl nDbgCtrl;
 };
 
 }

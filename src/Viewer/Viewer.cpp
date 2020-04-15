@@ -1,5 +1,8 @@
 #include "Viewer.h"
 #include <QPainter>
+#include <QValidator>
+#include <QLabel>
+#include <QButtonGroup>
 #include "../System/Version.h"
 
 // some macro helpers for identifying the version number of QGLViewer
@@ -168,20 +171,61 @@ void PKVIOMainWindow::initUi() {
     pBtnContinue  = new QPushButton("Continue");
     pBtnStop      = new QPushButton("Stop");
     pBtnClose     = new QPushButton("Close");
+    
     pCBXSimulator = new QCheckBox("Simulator");
+    
+    QLabel* pLblSegments = new QLabel("Segment:");
+    pLetSegements = new QLineEdit();
+    pLetSegements->setValidator(new QIntValidator(1,100));
+    QHBoxLayout* pLytSegment = new QHBoxLayout;
+    pLytSegment->addWidget(pLblSegments);
+    pLytSegment->addWidget(pLetSegements);
+    
+    QLabel* pLblCoVis = new QLabel("CoVis Depth;");
+    pLetCoVis = new QLineEdit();
+    pLetCoVis->setValidator(new QIntValidator(1,100));
+    QHBoxLayout* pLytCoVis = new QHBoxLayout;
+    pLytCoVis->addWidget(pLblCoVis);
+    pLytCoVis->addWidget(pLetCoVis);
+    
+    pCBXPnPSolver = new QCheckBox("Use PnP");
+    pCBXG2OSolver = new QCheckBox("Use G2O");
+    QButtonGroup* pBgpSolver = new QButtonGroup(this);
+    pBgpSolver->addButton(pCBXPnPSolver);
+    pBgpSolver->addButton(pCBXG2OSolver);
+    pCBXMapPointUpdate = new QCheckBox("Update MapPoint");
+    
+    pCBXCoVisMgr = new QCheckBox("G2O+CoVis");
+    pCBXMapPointFixed = new QCheckBox("Fix MapPoint");
+    
     pVBLControl->addWidget(pBtnStart);
     pVBLControl->addWidget(pBtnContinue);
     pVBLControl->addWidget(pBtnStop);
     pVBLControl->addWidget(pBtnClose);
     pVBLControl->addWidget(pCBXSimulator);
+    pVBLControl->addLayout(pLytSegment);
+    pVBLControl->addWidget(pCBXPnPSolver);
+    pVBLControl->addWidget(pCBXG2OSolver);
+    pVBLControl->addWidget(pCBXMapPointFixed);
+    pVBLControl->addWidget(pCBXMapPointUpdate);
+    pVBLControl->addWidget(pCBXCoVisMgr);
+    pVBLControl->addLayout(pLytCoVis);
     pVBLControl->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));
 
-    pWgtCtr->setFixedWidth(100);
+    pWgtCtr->setFixedWidth(150);
     //this->setMinimumSize(1000, 600);
     
     pBtnContinue->setVisible(false);
     pBtnStop->setEnabled(false);
     pBtnClose->setEnabled(false);
+    
+    pCBXSimulator->setChecked(nDbgCtrl.mBoolUseSimulator);
+    pCBXG2OSolver->setChecked(nDbgCtrl.mBoolUseG2OSolver);
+    pCBXCoVisMgr->setChecked(nDbgCtrl.mBoolUseCoVisMgr);
+    pLetSegements->setText(QString("%1").arg(nDbgCtrl.mCountSegment));
+    pLetCoVis->setText(QString("%1").arg(nDbgCtrl.mCountCoVis));
+    pCBXMapPointFixed->setChecked(nDbgCtrl.mBoolMapPointFixed);
+    pCBXMapPointUpdate->setChecked(!nDbgCtrl.mBoolMapPointFixed && nDbgCtrl.mBoolUpdateMapPoint);
 
     mPtrTimerVIO = new QTimer(this);
     connect(mPtrTimerVIO, &QTimer::timeout, this, [&]() {
@@ -214,10 +258,28 @@ void PKVIOMainWindow::initUi() {
         clear();
     });
     
-    connect(pCBXSimulator, &QCheckBox::clicked, this, [&](){
-        if(!mPtrVioSystem)return;
-        newVIO();
+    //connect(pCBXSimulator, &QCheckBox::clicked, this, [&](){ if(!mPtrVioSystem)return; newVIO(); });
+    connect(pCBXPnPSolver, &QCheckBox::clicked, this, [&](){ 
+        pCBXMapPointFixed->setChecked(true);
+        pCBXMapPointFixed->setEnabled(false);
+        
+        pCBXCoVisMgr->setEnabled(false);
+        pLetCoVis->setText(QString("%1").arg(1));
+        pLetCoVis->setEnabled(false);
     });
+    connect(pCBXG2OSolver, &QCheckBox::clicked, this, [&](){ 
+        pCBXMapPointFixed->setEnabled(true);
+        pCBXCoVisMgr->setEnabled(true);
+        pLetCoVis->setEnabled(pCBXCoVisMgr->isChecked());
+    });
+    connect(pCBXMapPointFixed, &QCheckBox::clicked, this, [&](){ 
+        nDbgCtrl.mBoolMapPointFixed = pCBXMapPointFixed->isChecked();
+        pCBXMapPointUpdate->setEnabled(!pCBXMapPointFixed->isChecked());
+        if(pCBXMapPointFixed->isChecked()){
+            pCBXMapPointUpdate->setChecked(false);
+        }
+    });
+    connect(pCBXCoVisMgr, &QCheckBox::clicked, this, [&](){ pLetCoVis->setEnabled(pCBXCoVisMgr->isChecked()); });
     
     /*
     */
@@ -227,7 +289,7 @@ void PKVIOMainWindow::initUi() {
     //mPtrGLViewer->setFixedSize();
     
     //this->update();
-    pBtnStart->click();
+    //pBtnStart->click();
 }
 
 
@@ -248,7 +310,14 @@ void PKVIOMainWindow::initVIO() {
     }
     mPtrVioSystem = PKVIO::System::generateVIOSystem();
     
-    mPtrVioSystem->initialize(pCBXSimulator->isChecked());
+    nDbgCtrl.mBoolUseSimulator = pCBXSimulator->isChecked();
+    nDbgCtrl.mBoolUseG2OSolver = pCBXG2OSolver->isChecked();
+    nDbgCtrl.mBoolUseCoVisMgr  = pCBXCoVisMgr->isChecked();
+    nDbgCtrl.mCountSegment     = pLetSegements->text().toInt();
+    nDbgCtrl.mCountCoVis       = pLetCoVis->text().toInt();
+    nDbgCtrl.mBoolUpdateMapPoint = pCBXMapPointUpdate->isChecked();
+    
+    mPtrVioSystem->initialize(nDbgCtrl);
     mPtrVioSystem->setRunVIO(false);
 }
 
@@ -294,6 +363,27 @@ QImage mat2qim(const cv::Mat & mat, int nWidth=0, int nHeight = 0)
     return qim;
 }
 
+void CameraPoseGLViewer::drawVirtualPointInSimulator() {
+    if(!DebugManager::DebugControl().mBoolUseSimulator)
+        return;
+    
+    auto vVirtualPoint = DebugManager::DebugControl().getVirtualPointInSimulator();
+    for(size_t nIdxVpt=0,nSzVpts=vVirtualPoint.size();nIdxVpt<nSzVpts;++nIdxVpt){
+        auto vpt = vVirtualPoint[nIdxVpt];
+        glPushMatrix();
+        glTranslatef(vpt(0),vpt(1),-vpt(2));
+        glBegin(GL_LINES);
+        glVertex3f(-1,-1,0);
+        glVertex3f(1,1,0);
+        glVertex3f(-1,1,0);
+        glVertex3f(1,-1,0);
+        glEnd();
+        glPopMatrix();
+    }
+    
+}
+
+
 void PKVIOMainWindow::clear() {
 
     mPtrTimerVIO->stop();
@@ -336,6 +426,8 @@ void CameraPoseGLViewer::dodraw() {
         return;
     setAxisIsDrawn(nSzCameraPose%20<10);
     
+    drawVirtualPointInSimulator();
+    
     glPushMatrix();
     float mPointSize = 20;
     glPointSize(mPointSize);
@@ -344,26 +436,41 @@ void CameraPoseGLViewer::dodraw() {
     // R,G,B
     glColor3f(1.0,1.0,0.0); // yellow
 
-    for(size_t i=0, iend=nSzCameraPose; i<iend;i++)
+    int nStart =0;
+    //nStart = nSzCameraPose-3;
+    for(size_t i=nStart, iend=nSzCameraPose; i<iend;i++)
     {
         auto p = mVecPose[i];
-        if(i>=iend-2){
+        if(i>=iend-1){
             glColor3f(1.0,0.0,0.0);
         }
         glVertex3f(p(0),p(1),p(2));
     }
     
     glEnd();
-    glPopMatrix();
     
-    /*
+    glPushMatrix();
+    auto p = mVecPose.back();
+    glTranslatef(p(0),p(1),p(2));
+    glBegin(GL_LINE_LOOP);
+    glVertex3f(1,1,1);
+    glVertex3f(-1,1,1);
+    glVertex3f(-1,-1,1);
+    glVertex3f(1,-1,1);
+    glEnd();
     glBegin(GL_LINE_LOOP);
     glVertex3f(0,0,0);
-    glVertex3f(100,0,0);
-    glVertex3f(0,100,0);
-    glVertex3f(100,100,100);
-    glVertex3f(0,0,100);
-    */
+    glVertex3f(1,1,1);
+    glVertex3f(-1,1,1);
+    glEnd();
+    glBegin(GL_LINE_LOOP);
+    glVertex3f(0,0,0);
+    glVertex3f(-1,-1,1);
+    glVertex3f(1,-1,1);
+    glEnd();
+    glPopMatrix();
+    glPopMatrix();
+    
 }
 
 

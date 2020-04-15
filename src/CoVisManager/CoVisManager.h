@@ -37,7 +37,7 @@ public:
                                 OneFrameKptIDMgrByFrameID(const TpFrameID& nFrameID){ return mKeyPointIDManager.OneFrameIDManager(nFrameID); }
                                 
     template<typename Func>
-    void                        collectCoVisInfo(const TpFrameID& nFrameID, Func f){
+    void                        collectCoVisInfo(const TpFrameID& nFrameID, Func f, int nDepth = 2){
         
                                     auto pNodeCur               = mPtrCoVisGraph->getFrameByFrameID(nFrameID);
                                     auto FuncVisitNode          = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
@@ -59,7 +59,7 @@ public:
                                         return false;
                                     };
     
-                                    mPtrCoVisGraph->BreadthFristSearch(pNodeCur, 2, FuncVisitNode, FuncSkipNode);
+                                    mPtrCoVisGraph->BreadthFristSearch(pNodeCur, nDepth, FuncVisitNode, FuncSkipNode);
                                 }
 protected:
     TpMapFrameID2FrameIndex     initFrameID2FrameIndexOfMatchResult(const KeyPointManager::FrameMatchResult& mFrameMatchResult);

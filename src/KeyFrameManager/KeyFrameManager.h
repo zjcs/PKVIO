@@ -167,6 +167,19 @@ public:
                                 }
                                 return mMapFrameID2CameraPose[nFrameID];
                             }
+                            
+    inline TpPtrCameraPose  generateOneFrameCameraPose(Type::Frame& fFrame){
+                                assert(fFrame.FrameID() == (int)mMapFrameID2CameraPose.size());
+                                TpPtrCameraPose nPtrCameraPose;
+                                if(mMapFrameID2CameraPose.size()==0){
+                                    nPtrCameraPose = std::make_shared<TpCameraPose>(cv::Matx44f::eye());
+                                }else{
+                                    nPtrCameraPose = std::make_shared<TpCameraPose>(*mMapFrameID2CameraPose.back());
+                                }
+                                // cout << "Genera one Camera Pose for FrameID:" << fFrame.FrameID() <<endl;
+                                mMapFrameID2CameraPose.push_back(nPtrCameraPose);
+                                return nPtrCameraPose;
+                            }
 protected:
     EnSLAMState             updateTrackState(int nCountSumTrackKpts, int nCountKptsOnThisFrame);
     
@@ -180,17 +193,6 @@ protected:
                             
     void                    collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
     
-    inline void             generateOneFrameCameraPose(Type::Frame& fFrame){
-                                assert(fFrame.FrameID() == (int)mMapFrameID2CameraPose.size());
-                                TpPtrCameraPose nPtrCameraPose;
-                                if(mMapFrameID2CameraPose.size()==0){
-                                    nPtrCameraPose = std::make_shared<TpCameraPose>(cv::Matx44f::eye());
-                                }else{
-                                    nPtrCameraPose = std::make_shared<TpCameraPose>(*mMapFrameID2CameraPose.back());
-                                }
-                                // cout << "Genera one Camera Pose for FrameID:" << fFrame.FrameID() <<endl;
-                                mMapFrameID2CameraPose.push_back(nPtrCameraPose);
-                            }
 private:
     MapPointIDManager                   mMapPointIDManager;
     Type::IDGenerator<TpKeyFrameID>     mKeyFrameIDGenerator;

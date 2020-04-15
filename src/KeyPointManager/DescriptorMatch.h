@@ -52,6 +52,28 @@ public:
     inline const TpFrameID          getFrameIDRight(void)const{return mFrameIDRight;}
     inline const int                getCountKptsLeft(void)const {return mCountKptsLeft;}
     inline const int                getCountKptsRight(void)const {return mCountKptsRight;}
+    
+    void getMatchKpts(const TpVecKeyPoints& mKeyPointsLeft, const TpVecKeyPoints& mKeyPointsRight, cv::Mat& mKptL, cv::Mat& mKptR) const {
+        size_t nSz = mMatch.size();
+        std::vector<cv::Point2f> vKptL, vKptR;
+        vKptL.reserve(nSz); vKptR.reserve(nSz);
+        for(int nIdx=0;nIdx<nSz;++nIdx){
+            const auto& nM = mMatch[nIdx];
+            vKptL.push_back(mKeyPointsLeft[nM.queryIdx].pt);
+            vKptR.push_back(mKeyPointsRight[nM.trainIdx].pt);
+        }
+        cv::Mat(vKptL).convertTo(mKptL, CV_32F);
+        cv::Mat(vKptR).convertTo(mKptR, CV_32F);
+    }
+    void getMatchKpts(const TpVecKeyPoints& mKeyPointsLeft, const TpVecKeyPoints& mKeyPointsRight, TpVecKeyPoints& mKptL, TpVecKeyPoints& mKptR) const {
+        size_t nSz = mMatch.size();
+        mKptL.reserve(nSz); mKptR.reserve(nSz);
+        for(int nIdx=0;nIdx<nSz;++nIdx){
+            const auto& nM = mMatch[nIdx];
+            mKptL.push_back(mKeyPointsLeft[nM.queryIdx]);
+            mKptR.push_back(mKeyPointsRight[nM.trainIdx]);
+        }
+    }
 private:
     TpVecMatchResult                mMatch;
     TpFrameID                       mFrameIDLeft,   mFrameIDRight;

@@ -23,6 +23,29 @@ typedef struct{
     inline const TpFrameID& FrameID(void)const { return FrameIDLeft(); }
     inline const TpFrameID& FrameIDLeft(void)const { return mFrameIDLeft; }
     inline const TpFrameID& FrameIDRight(void)const { return mFrameIDRight; }
+    
+    void getMatchKpts(const TpVecMatchResult& nMatch, cv::Mat& mKptL, cv::Mat& mKptR){
+        size_t nSz = nMatch.size();
+        std::vector<cv::Point2f> vKptL, vKptR;
+        vKptL.reserve(nSz); vKptR.reserve(nSz);
+        for(int nIdx=0;nIdx<nSz;++nIdx){
+            const auto& nM = nMatch[nIdx];
+            vKptL.push_back(mKeyPointsLeft[nM.queryIdx].pt);
+            vKptR.push_back(mKeyPointsRight[nM.trainIdx].pt);
+        }
+        cv::Mat(vKptL).convertTo(mKptL, CV_32F);
+        cv::Mat(vKptR).convertTo(mKptR, CV_32F);
+    }
+    
+    void getMatchKpts(const TpVecMatchResult& nMatch, TpVecKeyPoints& mKptL, TpVecKeyPoints& mKptR){
+        size_t nSz = nMatch.size();
+        mKptL.reserve(nSz); mKptR.reserve(nSz);
+        for(int nIdx=0;nIdx<nSz;++nIdx){
+            const auto& nM = nMatch[nIdx];
+            mKptL.push_back(mKeyPointsLeft[nM.queryIdx]);
+            mKptR.push_back(mKeyPointsRight[nM.trainIdx]);
+        }
+    }
    
 } TpOneFrameKptDescriptor;
 
