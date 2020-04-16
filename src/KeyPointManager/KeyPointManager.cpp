@@ -120,7 +120,6 @@ void KeyPointManager::initializeHistoryRecord()
 }
 
 
-
 void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointManager::TpOneFrameKptDescriptor& fCurFrameKptDescriptor, 
     vector<TpDescriptorMatchResult>& nOuterMatchResult) 
 {
@@ -129,32 +128,41 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     if(mFrameKptsDescriptorHistoryRecord.empty() || mFrameHistoryRecord.empty())
         return;
     
-    TpOneFrameKptDescriptor&    fLastFrameKptDescriptor = mFrameKptsDescriptorHistoryRecord.back();
+    auto FuncTrack = [&](const TpOneFrameKptDescriptor& fFrmKptDescLast, const TpOneFrameKptDescriptor& fFrmKptDescCur){
+        TpOneFrameKptDescriptor     mPrevAndCurLeftKptsDescriptor;
+        mPrevAndCurLeftKptsDescriptor.mFrameIDLeft      = fFrmKptDescLast.FrameIDLeft();
+        mPrevAndCurLeftKptsDescriptor.mFrameIDRight     = fFrmKptDescCur.FrameIDLeft();
+        mPrevAndCurLeftKptsDescriptor.mDescriptorsLeft  = fFrmKptDescLast.mDescriptorsLeft;
+        mPrevAndCurLeftKptsDescriptor.mKeyPointsLeft    = fFrmKptDescLast.mKeyPointsLeft;
+        mPrevAndCurLeftKptsDescriptor.mDescriptorsRight = fFrmKptDescCur.mDescriptorsLeft;
+        mPrevAndCurLeftKptsDescriptor.mKeyPointsRight   = fFrmKptDescCur.mKeyPointsLeft;
+        return mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+    };
+    
+    // Step 1. track from last frame.
     Frame&                      fLastFrame              = mFrameHistoryRecord.back();
-    
-    const StereoFrame& fCurStereoFrame              = dynamic_cast<const StereoFrame&>(fCurFrame);
-    const StereoFrame& fLastStereoFrame             = dynamic_cast<const StereoFrame&>(fLastFrame);
-    
-    StereoFrame                 mPrevLeftAndCurLeftFrame = constructTrackFrame(fLastStereoFrame, fCurStereoFrame);
-    
-    TpOneFrameKptDescriptor     mPrevAndCurLeftKptsDescriptor;
-    mPrevAndCurLeftKptsDescriptor.mFrameIDLeft      = fLastStereoFrame.FrameID();
-    mPrevAndCurLeftKptsDescriptor.mFrameIDRight     = fCurStereoFrame.FrameID();
-    mPrevAndCurLeftKptsDescriptor.mDescriptorsLeft  = fLastFrameKptDescriptor.mDescriptorsLeft;
-    mPrevAndCurLeftKptsDescriptor.mKeyPointsLeft    = fLastFrameKptDescriptor.mKeyPointsLeft;
-    mPrevAndCurLeftKptsDescriptor.mDescriptorsRight = fCurFrameKptDescriptor.mDescriptorsLeft;
-    mPrevAndCurLeftKptsDescriptor.mKeyPointsRight   = fCurFrameKptDescriptor.mKeyPointsLeft;
-    
+    TpOneFrameKptDescriptor&    fLastFrameKptDescriptor = mFrameKptsDescriptorHistoryRecord.back();
     // Pre-Cur is about 60%, 300/500 match and a little better than left-right's 50%, and all is right match.
-    TpDescriptorMatchResult mPrevAndCurMatchResult = mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
-        
-    //mFrameMatchResult.pushOuterFrameDescriptorMatchResult(mPrevAndCurMatchResult);
+    TpDescriptorMatchResult mPrevAndCurMatchResult      = FuncTrack(fLastFrameKptDescriptor, fCurFrameKptDescriptor);
     nOuterMatchResult.push_back(mPrevAndCurMatchResult);
     
-    
-    //AutoLogTimer("KeyPoint show match");
+    const StereoFrame& fCurStereoFrame      = dynamic_cast<const StereoFrame&>(fCurFrame);
+    const StereoFrame& fLastStereoFrame     = dynamic_cast<const StereoFrame&>(fLastFrame);
+    StereoFrame mPrevLeftAndCurLeftFrame    = constructTrackFrame(fLastStereoFrame, fCurStereoFrame);
     //mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, mPrevAndCurMatchResult, "PrevLeft | CurLeft - Match Result");
     //assert(mPtrDesciptorMatcher->debugDuplicatedMatch(f, mKptsDescriptors, mMatchResult));
+    
+    // Step 2. track from last kf frame.
+    int nSzKFToTrack    = DebugManager::DebugControl().mMaxKeyFramesToMatchInTrack;
+    if(nSzKFToTrack>0){
+        throw; // not test now.
+        auto nVecKFKptDesc  = mFrameKptsDescriptorHistoryRecord.getLastKeyFrames(nSzKFToTrack);
+        for(int nIdxKFTOTrack=0;nIdxKFTOTrack<nSzKFToTrack;++nIdxKFTOTrack){
+            TpOneFrameKptDescriptor&    fKFKptDesc = nVecKFKptDesc[nIdxKFTOTrack];
+            TpDescriptorMatchResult mPrevKFAndCurMatchResult = FuncTrack(fKFKptDesc, fCurFrameKptDescriptor);
+            nOuterMatchResult.push_back(mPrevKFAndCurMatchResult);
+        }
+    }
 }
 
 

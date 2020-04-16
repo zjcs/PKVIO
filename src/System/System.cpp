@@ -30,8 +30,7 @@ void System::initialize(const DebugManager::TpDebugControl& nDbgCtrl)
     DebugManager::DebugControl() = nDbgCtrl;
     mPtrDbgCtrl = &DebugManager::DebugControl();
     
-    DebugManager::setUseSimulator(mPtrDbgCtrl->mBoolUseSimulator);
-    if(!DebugManager::getUseSimulator()){
+    if(!mPtrDbgCtrl->mBoolUseSimulator){
         mPtrDataset = std::make_shared<DatasetEuRoc>(sDatasetPath);   
         mPtrDataset->initialize();
     } else {
@@ -625,7 +624,7 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     map<TpKeyPointID, TpMapPointID> nMapKeyPointID2MapPointID = nFrameKptIDMapPointPair.getMapKptID2MapPointID();
     vector<KeyFrameManager::TpKptIDMapPointPairWithFrameID> nVecKptIDMapPointPairWithFrameID;
     auto FuncGetCoVisWithCurrentFrame = [&](const TpFrameID nCosVisFrmID) {
-            if(nFrameIDCur - nCosVisFrmID>DebugManager::getMaxCoVisLength()) return;
+            if(nFrameIDCur - nCosVisFrmID>DebugManager::DebugControl().mCountMaxCoVisFrame ) return;
         
             TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
             mCoVisMgr.OneFrameKptIDMgrByFrameID(nCosVisFrmID).getAllKptIDsAndIdexs(nVecKptIDs, nVecKptIndexs);

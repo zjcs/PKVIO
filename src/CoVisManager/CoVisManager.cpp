@@ -107,8 +107,8 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
         KeyPointManager::TpOneFrameIDManager& mPrevFrameIDMgr = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nPrevFrameIndex);
         KeyPointManager::TpOneFrameIDManager& mCurFrameIDMgr  = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nCurFrameIndex);
         
+        // 1. try to new KptID, according this track;
         int nCountCoVisID = 0;
-        
         for(int nIdxKptMatch = 0;nIdxKptMatch<nSzKptsMatch;++nIdxKptMatch)
         {
             mPrevAndCurFrameMatchResult.getMatchKptIndex((const int)nIdxKptMatch, nKptIdxInPrev, nKptIdxInCur);
@@ -137,6 +137,7 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
             }
         }
         
+        // 2. count their co-vis kpt number, and build co-vis.
         if(nCountCoVisID>0){
             assert(nCountCoVisID ==  mKeyPointIDManager.sizeCoVisKptIDs(nPrevFrameID, nCurFrameID));
             nVecCoVisFramePairAndWeight.push_back(CoVisFramePairAndWeight(nPrevFrameID, nCurFrameID, nCountCoVisID));
@@ -145,6 +146,25 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
         }
         nCountSumTrackKpts += nCountCoVisID;
     }
+    
+    // Method 2: directly find co-vis Keypoint between current frame and KF which co-vis KptID and MpID,
+    //           which is different to find co-vis by descriptor in KeyPointManager::track;
+    if(false){
+        // TODO: Test.
+        throw;
+        TpVecFrameID nVecTryToCoVisKFFrmID; // how to get it.
+        for(size_t nIdx=0,nSz = nVecTryToCoVisKFFrmID.size();nIdx<nSz;++nIdx){
+            TpFrameID nFrmIDKF = nVecTryToCoVisKFFrmID[nIdx];
+            if(std::find(nVecFrameIDsDirectAdjoin.begin(), nVecFrameIDsDirectAdjoin.end(), nFrmIDKF)==nVecFrameIDsDirectAdjoin.end()){
+                int nCountCoVisID =  mKeyPointIDManager.sizeCoVisKptIDs(nFrmIDKF, nCurFrameID);
+                if(nCountCoVisID>0){
+                    nVecCoVisFramePairAndWeight.push_back(CoVisFramePairAndWeight(nFrmIDKF, nCurFrameID, nCountCoVisID));
+                    nVecFrameIDsDirectAdjoin.push_back(nFrmIDKF);
+                }
+            }
+        }
+    }
+    
     //cout << "build covis begin ..." <<endl;
     mPtrCoVisGraph->buildCoVisBetween(nVecCoVisFramePairAndWeight);
     //cout << "build covis end ..." <<endl;
@@ -211,11 +231,11 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const 
         const TpFrameID nFrameIDCur = getFrameIDTemplate(pNodeCurFrame->getData());
         const TpFrameID nFrameIDTo = pNodeTo->getData().FrameID();
         // always skip some node.
-        if(nFrameIDCur - nFrameIDTo>DebugManager::getMaxCoVisLength())
+        if(nFrameIDCur - nFrameIDTo>DebugManager::DebugControl().mCountMaxCoVisFrame)
             return true;
         return false;
     };
-    mPtrCoVisGraph->BreadthFristSearch(pNodeCurFrame, 3, FuncVisitNode, FuncSkipNode);    
+    mPtrCoVisGraph->BreadthFristSearch(pNodeCurFrame, DebugManager::DebugControl().mMaxGraphDepthToBuildCoVis, FuncVisitNode, FuncSkipNode);    
 }
 
 TpVecCoVisFrameIDs CoVisManager::getCoVisFrameIDs(const Type::TpFrameID nFrameIDQuery) const {
