@@ -18,6 +18,8 @@ class CoVisManager
 {
 public:
     CoVisManager();
+    typedef std::function<TpVecFrameID(const TpFrameID)> TpFuncGetCoVisKFFrameID;
+    void                        initCallBackFuncGetLastKFs(TpFuncGetCoVisKFFrameID nFunc){mFuncGetCoVisKFFrameID = nFunc;}
     
     void                        solve(const Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult);
     
@@ -74,6 +76,7 @@ private:
     KeyPointManager::KeyPointIDManager mKeyPointIDManager;
     TpPtrCoVisGraph                    mPtrCoVisGraph;
     DebugManager::DebugCoVisInfo       mDebugCoVisInfo; 
+    TpFuncGetCoVisKFFrameID            mFuncGetCoVisKFFrameID;
 };
     
 }

@@ -13,7 +13,8 @@ typedef enum{
     TpIsComing
 } TpHistoryStorageState;
 
-typedef struct{
+class TpOneFrameKptDescriptor{
+public:
     TpVecKeyPoints  mKeyPointsLeft; 
     TpVecDescriptor mDescriptorsLeft;
     TpVecKeyPoints  mKeyPointsRight; 
@@ -47,7 +48,7 @@ typedef struct{
         }
     }
    
-} TpOneFrameKptDescriptor;
+} ;
 
 typedef std::vector<TpOneFrameKptDescriptor> TpVecFrameKptDescriptors;
     
@@ -77,11 +78,14 @@ typedef std::function<bool(Type::Frame& fFrame,const TpFrameID nFrameID)>       
 //typedef bool(*TpFuncIsIDAndFrameMatch)(TpOneFrameKptDescriptor&fFrame,const TpFrameID nFrameID);
 typedef std::function<bool(TpOneFrameKptDescriptor&fFrame,const TpFrameID nFrameID)>    TpFuncIsIDAndFrameKptsDescriptorMatch;
 typedef std::function<bool(TpOneFrameKptDescriptor&fFrame)>                             TpFuncIsFrameStasify;
+typedef std::function<bool(TpFrameID)>                                                  TpFuncIsKeyFrameByFrameID;
+
 
 extern TpFuncIsIDAndFrameMatch                        FuncIsIDAndFrameMatch;
 extern TpFuncIsIDAndFrameKptsDescriptorMatch          FuncIsIDAndFrameKptsDescriptorMatch;
 extern TpFuncIsFrameStasify             FuncIsKeyFrame;
 extern TpFuncIsFrameStasify             FuncIsNotKeyFrame;
+extern TpFuncIsKeyFrameByFrameID        FuncIsKeyFrameByFrameID;
 
 
 template<typename TpFrameType>
@@ -91,12 +95,13 @@ bool FuncIsIDAndFrameDataMatch(TpFrameType& fFrame, const TpFrameID nFrameID)
 }
 
 template<typename TpFrameType>
-bool FuncIsKeyFrameTemplate(TpFrameType& fFrame){
-    return fFrame.FrameID() == 0;
+bool FuncIsKeyFrameTemplate(const TpFrameType& fFrame){
+    //return fFrame.FrameID() == 0;
+    return FuncIsKeyFrameByFrameID(fFrame.FrameID());
 }
 
 template<typename TpFrameType>
-bool FuncIsNotKeyFrameTemplate(TpFrameType& fFrame){
+bool FuncIsNotKeyFrameTemplate(const TpFrameType& fFrame){
     return !FuncIsKeyFrame(fFrame);
 }
 
@@ -114,7 +119,10 @@ public:
     // only one right way is to define the function template by hand.
     TpFrameDataHistory(std::function<bool(TpFrameType&, const TpFrameID)> fFuncIsIDAndTMatch) 
     : DataHistoryTemplate<TpFrameType, TpFrameID> (fFuncIsIDAndTMatch)
-    { }
+    { 
+        cout << "begin kf" <<endl;
+        DataHistoryTemplate<TpFrameType, TpFrameID>::initDataSpecialFunction(FuncIsKeyFrameTemplate<TpFrameType>);
+    }
     
     //DataHistoryTemplate<TpFrameType>::TpVecTs     getLastFrames(int nSz, bool bIncludeKeyFrame = true)
     

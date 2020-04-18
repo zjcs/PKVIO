@@ -259,6 +259,12 @@ void PKVIOMainWindow::initUi() {
     });
     
     //connect(pCBXSimulator, &QCheckBox::clicked, this, [&](){ if(!mPtrVioSystem)return; newVIO(); });
+    connect(pCBXSimulator, &QCheckBox::clicked, this, [&](){
+        if(mPtrVioSystem)
+            return;
+        mPtrGLViewer->setDrawVirtualPoint(pCBXSimulator->isChecked());
+        mPtrGLViewer->update();
+    });
     connect(pCBXPnPSolver, &QCheckBox::clicked, this, [&](){ 
         pCBXMapPointFixed->setChecked(true);
         pCBXMapPointFixed->setEnabled(false);
@@ -365,7 +371,7 @@ QImage mat2qim(const cv::Mat & mat, int nWidth=0, int nHeight = 0)
 }
 
 void CameraPoseGLViewer::drawVirtualPointInSimulator() {
-    if(!DebugManager::DebugControl().mBoolUseSimulator)
+    if(!DebugManager::DebugControl().mBoolUseSimulator && !mBoolDrawVirtualPoint)
         return;
     
     auto vVirtualPoint = DebugManager::DebugControl().getVirtualPointInSimulator();
@@ -422,12 +428,14 @@ void ImageWidget::paintEvent(QPaintEvent* e) {
 }
 
 void CameraPoseGLViewer::dodraw() {
+    
+    drawVirtualPointInSimulator();
+    
     size_t nSzCameraPose = mVecPose.size();
     if(!nSzCameraPose)
         return;
     setAxisIsDrawn(nSzCameraPose%20<10);
     
-    drawVirtualPointInSimulator();
     
     glPushMatrix();
     float mPointSize = 20;

@@ -43,7 +43,7 @@ private:
     cv::Matx44f solverCurrentFramePose(const TpFrameID nFrameIDCur);
     
     void debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
-    
+   
     map<TpFrameID, map<TpKeyPointIndex, TpPtrMapPoint3D>> nMapMap3D;
 private:
     TpFuncDoExec                        mPtrFuncDoExec;

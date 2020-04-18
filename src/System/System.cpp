@@ -41,6 +41,23 @@ void System::initialize(const DebugManager::TpDebugControl& nDbgCtrl)
     
     mPtrKeyFrameMgr = std::make_shared<KeyFrameManager::KeyFrameManager>();
     
+    KeyPointManager::FuncIsKeyFrame = [&](KeyPointManager::TpOneFrameKptDescriptor& nKptDesc)->bool{
+        return mPtrKeyFrameMgr->isKeyFrame(nKptDesc.FrameID());
+    };
+    KeyPointManager::FuncIsKeyFrameByFrameID = [&](TpFrameID nFrameID)->bool{
+        return mPtrKeyFrameMgr->isKeyFrame(nFrameID);
+    };
+    
+    mCoVisMgr.initCallBackFuncGetLastKFs([&](const TpFrameID nFrameID)-> TpVecFrameID{
+        auto nVecFrames = mKeyPointMgr.getFrameKptsDescriptorHistory().getLastKeyFrames(2);
+        TpVecFrameID nVecFrameID;
+        for(size_t nIdx=0;nIdx<nVecFrames.size();++nIdx){
+            nVecFrameID.push_back(getFrameIDTemplate(nVecFrames[nIdx]));
+        }
+        return nVecFrameID;
+    });
+    
+    
     cout << "PkVio System intialization Finish." << endl;
 }
 
@@ -74,6 +91,11 @@ void System::runVIO() {
 
 
 void System::debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
+    
+    // only for optical flow...
+    if(!(mPtrDbgCtrl->mMaxFramesToMatchInTrack==1&&mPtrDbgCtrl->mMaxKeyFramesToMatchInTrack==0))
+        return;
+       
     int nCurCountKptIDsWithMapPoint = mPtrKeyFrameMgr->countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
     static int nPrevCountKptIDsWithMapPoint = 0;
     
@@ -510,7 +532,7 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
             TpVecMatchResult nVecMatchResultWithParall;
             TpVecMatchResult nVecMatchResultWithoutParall;
             
-#if 1
+#if 0
             cout << "Parallax on Stereo Frame :" <<endl;
             for(int nIdxMatch=0,nSzMatch=mMatchResult.get().size();nIdxMatch<nSzMatch;++nIdxMatch){
                 TpKeyPointIndex nKptIdxLeft, nKptIdxRight;
@@ -539,10 +561,13 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
             //cv::waitKey();
 #endif
             
-            
             KeyPointManager::TpOneFrameIDManager& mOneFrameIDMgr = mCoVisMgr.OneFrameKptIDMgrByFrameID(mCurFrame.FrameID());
             mPtrKeyFrameMgr->solve(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
             
+            mKeyPointMgr.updateKFInHistory();
+            
+            
+            //cout << "%0-410:" << mPtrKeyFrameMgr->getMapPointIDManager().isExistingMapPointID(410)<<endl;
             debugCountTrackingKptIDWihtMapPointID(mCurFrame, mFrameMatchResult, mOneFrameIDMgr);
             
             if(mPtrKeyFrameMgr->isKeyFrame(mCurFrame.FrameID())){
@@ -574,22 +599,25 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                     TpKeyPoint nKptRightUndistor = nCameraRight.getInnerParam().undistor(nVecKptRight[nMatchKptIdxRight]);
                     
                     float nDepthInLeftView = 0;
+                    //if(Tools::triangulation(nKptLeftUndistor.pt, nKptRightUndistor.pt, 435.262, 47.912663, nDepthInLeftView)){
                     if(Tools::triangulation(nKptLeftUndistor.pt, nKptRightUndistor.pt, 435.262, 47.912663, nDepthInLeftView)){
                         TpKeyPoint nKptLeftUndistorNorm  = nCameraLeft.getInnerParam().cvtPixelToNorm(nKptLeftUndistor);
                         cv::Vec3f  nMp3DLeftView(nKptLeftUndistorNorm.pt.x*nDepthInLeftView,
                                                  nKptLeftUndistorNorm.pt.y*nDepthInLeftView, nDepthInLeftView);
                         auto nMp3DWorld = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID())->cvtToWorld(nMp3DLeftView);
                         nMp.initMapPoint3D(cv::Point3f(nMp3DWorld));
-                        cout << "Pixel Left|Right - PtInWorld(LeftView): " << nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt << "  - "<< nMp3DWorld <<endl;
+                        //cout << "Pixel Left|Right - PtInWorld(LeftView): " << nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt << "  - "<< nMp3DWorld <<endl;
                     }
                 }
                 //cout <<endl;
             }else{
                 // non-kf observe should insert to the mappoint?
             }
+            //cout << "%1-410:" << mPtrKeyFrameMgr->getMapPointIDManager().isExistingMapPointID(410)<<endl;
             
             cv::Matx44f nFramePoseCur = solverCurrentFramePose(mCurFrame.FrameID());
             mPtrCameraPoseCurFrame = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID());
+            //cout << "%2-410:" << mPtrKeyFrameMgr->getMapPointIDManager().isExistingMapPointID(410)<<endl;
             
             cv::Mat mImgToShow = mCurFrame.Image().clone();
             
@@ -624,7 +652,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
     map<TpKeyPointID, TpMapPointID> nMapKeyPointID2MapPointID = nFrameKptIDMapPointPair.getMapKptID2MapPointID();
     vector<KeyFrameManager::TpKptIDMapPointPairWithFrameID> nVecKptIDMapPointPairWithFrameID;
     auto FuncGetCoVisWithCurrentFrame = [&](const TpFrameID nCosVisFrmID) {
-            if(nFrameIDCur - nCosVisFrmID>DebugManager::DebugControl().mCountMaxCoVisFrame ) return;
+            if(mPtrDbgCtrl->mCountMaxCoVisFrame && nFrameIDCur - nCosVisFrmID>mPtrDbgCtrl->mCountMaxCoVisFrame)
+                return;
         
             TpVecKeyPointID nVecKptIDs; TpVecKeyPointIndex nVecKptIndexs;
             mCoVisMgr.OneFrameKptIDMgrByFrameID(nCosVisFrmID).getAllKptIDsAndIdexs(nVecKptIDs, nVecKptIndexs);
@@ -707,10 +736,10 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
             mKeyPointMgr.getStereoFrameHistory().get(nFrameIDCoVis).getImageLeft(),
             mKeyPointMgr.getDescriptor(nFrameIDCoVis).mKeyPointsLeft,
             mCoVisMgr.getCoVis(nFrameIDCur, nFrameIDCoVis), 
-            true, "CoVis"+cvtToString(nFrameIDCur)+"|"+cvtToString(nFrameIDCoVis));
+            true, "CoVis-AllKpt"+cvtToString(nFrameIDCur)+"|"+cvtToString(nFrameIDCoVis));
         
         bShowAll = cv::waitKey() != 27;
-    }
+    }if(bShowAll)
     cv::destroyAllWindows();
     }
     
@@ -723,13 +752,13 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         cv::putText(nMapFrameID2FrameImage[nVm.mFrameID], cvtToString(nVm.mMapPointID), nVm.mKeyPoint.pt, 1, 1, cv::Scalar(255));
     }
     {
-    bool bShowAll = false;
+    bool bShowAll = true;
     for(auto Iter = nMapFrameID2CameraPose.begin();Iter!=nMapFrameID2CameraPose.end() && bShowAll;++Iter){
         auto nFrameIDCoVis = Iter->first;
         cout << "Disp: " << nFrameIDCoVis << " - " << nFrameIDCur <<endl;
-        Tools::showImageIfTitleNotEmpty(nMapFrameID2FrameImage[nFrameIDCoVis], "Vm"+cvtToString(nFrameIDCur)+"|"+cvtToString(nFrameIDCoVis));
+        Tools::showImageIfTitleNotEmpty(nMapFrameID2FrameImage[nFrameIDCoVis], "CoVis-OnlyVm"+cvtToString(nFrameIDCur)+"|"+cvtToString(nFrameIDCoVis));
         bShowAll = cv::waitKey() != 27;
-    }
+    }if(bShowAll)
     cv::destroyAllWindows();
     }
 #endif

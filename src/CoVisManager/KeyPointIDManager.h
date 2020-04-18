@@ -24,8 +24,14 @@ public:
     inline const TpKeyPointID           getKeyPointID(const TpKeyPointIndex nKeyPointIndexInThisFrame) const {
                                             return mVecKeyPointIDs[nKeyPointIndexInThisFrame]; }
     
-    inline void                         InitializeKptID(TpKeyPointID& nNewKptIDToThisID, TpKeyPointID nNewKptID){
-                                            nNewKptIDToThisID = nNewKptID; }
+    inline bool                         InitializeKptID(TpKeyPointID& nNewKptIDToThisID, TpKeyPointID nNewKptID){
+                                            if(isValideKeyPointID(nNewKptIDToThisID)&& nNewKptIDToThisID!= nNewKptID){
+                                                return false; throw;
+                                            }
+                                            nNewKptIDToThisID = nNewKptID;
+                                            assert(getAllKeyPointIDsSet().size());
+                                            return true;
+                                        }
     inline void                         InitializeKptIDByKptIdx(TpKeyPointIndex& nNewKptIDToThisIndex, TpKeyPointID nNewKptID){ 
                                             KeyPointID(nNewKptIDToThisIndex) = nNewKptID; 
                                         }
@@ -63,6 +69,13 @@ public:
                                             nVecKptIDs.resize(nSzKptIDs);
                                             std::copy_if(mVecKeyPointIDs.begin(),mVecKeyPointIDs.end(), nVecKptIDs.begin(),Type::isValideKeyPointID);
                                             return nVecKptIDs;
+                                        }
+    TpSetKeyPointID                     getAllKeyPointIDsSet(void){
+                                            TpSetKeyPointID nSet;
+                                            for(size_t nIdx=0;nIdx<mVecKeyPointIDs.size();++nIdx){ nSet.insert(mVecKeyPointIDs[nIdx]); }
+                                            nSet.erase(Type::INVALIDKEYPOINTID);
+                                            assert(nSet.size() == sizeKeyPointsWithID());
+                                            return nSet;
                                         }
     TpVecKeyPointIndex                  getAllKeyPointIndexsWithID(void){
                                             int nSzKptIDs = sizeKeyPointsWithID();
@@ -135,12 +148,15 @@ public:
                                         }
                                         
     inline const TpVecKeyPointID        getCoVisKeyPointIDs(const TpFrameID nFrameID1, const TpFrameID nFrameID2){
-                                            TpVecKeyPointID nVecKptIDs1 = OneFrameIDManager(nFrameID1).getAllKeyPointIDs();
+                                            TpSetKeyPointID nSetKptIDs1 = OneFrameIDManager(nFrameID1).getAllKeyPointIDsSet();
                                             TpVecKeyPointID nVecKptIDs2 = OneFrameIDManager(nFrameID2).getAllKeyPointIDs();
-                                            TpSetKeyPointID nSetKptIDs1(nVecKptIDs1.begin(),nVecKptIDs1.end());
                                             vector<bool> nbVecKptIDs2FilterTrueSave(nVecKptIDs2.size(),false);
+                                            int nCount = 0;
                                             for(int nIdx=0,nSz=nVecKptIDs2.size();nIdx<nSz;++nIdx){
-                                                if(nSetKptIDs1.count(nVecKptIDs2[nIdx])) nbVecKptIDs2FilterTrueSave[nIdx] = true;
+                                                if(nSetKptIDs1.count(nVecKptIDs2[nIdx])) {
+                                                    nbVecKptIDs2FilterTrueSave[nIdx] = true;
+                                                    //cout << "CoVis2:" << nCount++ << "-" << nVecKptIDs2[nIdx] << endl;
+                                                }
                                             }
                                             Tools::filter(nVecKptIDs2, nbVecKptIDs2FilterTrueSave);
                                             return nVecKptIDs2;

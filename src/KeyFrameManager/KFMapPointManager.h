@@ -15,7 +15,9 @@ namespace KeyFrameManager
         TpMapPoint(TpMapPointID nMapPointID, TpKeyPointID nKptID)
         : mMapPointID(nMapPointID), mKptID(nKptID), mBoolMpValid(false)
         , mMapPoint3D(std::make_shared<TpMapPoint3D>(cv::Point3f(RandomData(),RandomData(),RandomData())))
-        {}
+        {
+            //cout << "New MpPt: KptID|MpID-" << nKptID<<"|"<<nMapPointID<<endl;
+        }
         
         inline void             initMapPoint3D(const TpMapPoint3D& nMp3D){*mMapPoint3D = nMp3D; mBoolMpValid = true;}
         inline bool             getMapPoint3DValid(void)const{return mBoolMpValid;}

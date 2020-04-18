@@ -30,6 +30,8 @@ void filter(vector<T>& nVecInput, const vector<bool>& nFilterTrueSave){
     auto nIterRemove = nVecInput.begin();
     std::advance(nIterRemove, nIdxToWrite);
     nVecInput.erase(nIterRemove, nVecInput.end());
+    
+    //for(int nIdx=0,nSz=nVecInput.size();nIdx<nSz;++nIdx){ cout << "nCoVis3:" << nIdx << " - " << nVecInput[nIdx] <<endl; }
 }
 
 bool triangulation(const cv::Point2f& Pl2D, const cv::Point2f& Pr2D, const float fx, const float& nBaseline, float& nDepthInLeftView);

@@ -27,7 +27,8 @@ void CoVisManager::solve (const Type::Frame& fFrame, const KeyPointManager::Fram
     Tools::Timer tTimer(FuncLogDebugCoVisInfo, "CoVis Whole", false ,&mDebugCoVisInfo.mTimeCostWhole);
     
     const TpFrameID nCurFrameID = fFrame.FrameID();
-    int nCountKptsOnThisFrame = mFrameMatchResult.getCountKptsOnThisFrame();
+    //int nCountKptsOnThisFrame = mFrameMatchResult.getCountKptsOnThisFrame();
+    int nCountKptsOnThisFrame = mFrameMatchResult.getInnerFrameDescriptorMatchResult().getCountKptsLeft();
     mKeyPointIDManager.addOneFrameIDManager(fFrame.getFrameIndex(), nCurFrameID, nCountKptsOnThisFrame);
     
     int nCountSumTrackKpts = copyIDToCurFrameOrGenerateIDForBothMatchFrames(mFrameMatchResult);
@@ -92,6 +93,7 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
     //TODO: if stereo, two keypoints in left and right should have a ID when they satisfy the rule below.
     int nSzOuterMatch = mFrameMatchResult.sizeOuterFrameDescriptorMatchResult();
     TpVecCoVisFramePairAndWeight nVecCoVisFramePairAndWeight;
+    std::map<TpKeyPointID, TpKeyPointIndex> nMapKptID2KptIdxCur;
     for(int nIdxOuterMatch =0; nIdxOuterMatch<nSzOuterMatch; ++nIdxOuterMatch)
     {
         auto& mPrevAndCurFrameMatchResult    = mFrameMatchResult.getOuterFrameDescriptorMatchResult(nIdxOuterMatch);
@@ -109,37 +111,75 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
         
         // 1. try to new KptID, according this track;
         int nCountCoVisID = 0;
+        std::vector<int> nVecMatchIndexDuplicatedToDelete; 
         for(int nIdxKptMatch = 0;nIdxKptMatch<nSzKptsMatch;++nIdxKptMatch)
         {
             mPrevAndCurFrameMatchResult.getMatchKptIndex((const int)nIdxKptMatch, nKptIdxInPrev, nKptIdxInCur);
             TpKeyPointID& mKptIDInPrev = mPrevFrameIDMgr.KeyPointID(nKptIdxInPrev);
+            TpKeyPointID& mKptIDInCur = mCurFrameIDMgr.KeyPointID(nKptIdxInCur);
             
+            bool nBoolCoVis = false;
             bool bNewKptID = false;
             if(Type::isInvalideKeyPointID(mKptIDInPrev)){
                 //TODO : should have enough parallax to be able triangule a new 3d point, then general ID.
-                mPrevFrameIDMgr.InitializeKptID(mKptIDInPrev, mKeyPointIDManager.GenerateKeyPointID());
-                bNewKptID = true;
+                if(Type::isValideKeyPointID(mKptIDInCur)){  // Try to fix bug below(merge keypoint), it's not a finnal solution and only 2Frame tracked is Okay.
+                    nBoolCoVis = false;
+                    // have bug, mKptIDInCur maybe conflicted with KptIDs in nFrameIDPrev; so delete the co-vis;
+                    //mPrevFrameIDMgr.InitializeKptID(mKptIDInPrev, mKptIDInCur);
+                    //nBoolCoVis = true;
+                }else{
+                    mPrevFrameIDMgr.InitializeKptID(mKptIDInPrev, mKeyPointIDManager.GenerateKeyPointID());
+                    //cout << "New KptID:KptID|FrmPrev|FrmCur" << mKptIDInPrev<<"|"<<nPrevFrameID<<"|"<<nCurFrameID<<endl;
+                    bNewKptID = true;
+                    nBoolCoVis = false;
+                }
             }
             
-            if(!Type::isInvalideKeyPointID(mKptIDInPrev)){
+            if(Type::isValideKeyPointID(mKptIDInPrev)){
                 // prev kpt has got a ID, copy it to its corresponding kpts in current frame.
-                TpKeyPointID& mKptIDInCur = mCurFrameIDMgr.KeyPointID(nKptIdxInCur);
-                if(Type::isValideKeyPointID(mKptIDInCur)) { 
-                    //TODO : need merge keypoint
-                    cout << "Warning: need merge keypoint or bug in code. exit"<<endl;
+                if(Type::isValideKeyPointID(mKptIDInCur) && (bNewKptID || mKptIDInPrev!=mKptIDInCur)) { 
+                    //TODO : need merge keypoint, this problem is caused of dis-continue co-vis merged by one keypoint.
+                    // Optical-Flow donot have this problem, only descriptor-based keypoint match is effected.
+                    if(bNewKptID){
+                        cout << "Warning: need merge keypoint or bug in code. exit"<<endl;
+                        throw;
+                        nBoolCoVis = true;
+                    }else{
+                        nBoolCoVis = false;
+                    }
+                }else{
+                    auto Iter = nMapKptID2KptIdxCur.find(mKptIDInPrev);
+                    if(Iter == nMapKptID2KptIdxCur.end() || Iter->second == nKptIdxInCur){
+                        nBoolCoVis = true;
+                        mCurFrameIDMgr.InitializeKptID(mKptIDInCur, mKptIDInPrev);
+                        nMapKptID2KptIdxCur[mKptIDInCur] = nKptIdxInCur;
+                        if(bNewKptID){
+                            mCurFrameIDMgr.setKptIDIsFirstDetectedDueToCurrentFrame(nKptIdxInCur, mKptIDInCur);
+                        }
+                    }else{
+                        nBoolCoVis = false;
+                    }
+                }
+            }else{
+                if(nBoolCoVis)
                     throw;
-                }
-                mCurFrameIDMgr.InitializeKptID(mKptIDInCur, mKptIDInPrev);
-                if(bNewKptID){
-                    mCurFrameIDMgr.setKptIDIsFirstDetectedDueToCurrentFrame(nKptIdxInCur, mKptIDInCur);
-                }
+            }
+            
+            if(nBoolCoVis){
+                //cout << "CoVis1:" << nCountCoVisID << " - " << mKptIDInCur << endl;
                 ++nCountCoVisID;
+            }else{
+                nVecMatchIndexDuplicatedToDelete.push_back(nIdxKptMatch);
             }
         }
         
+        const_cast<KeyPointManager::TpDescriptorMatchResult&>(mPrevAndCurFrameMatchResult).deleteMatch(nVecMatchIndexDuplicatedToDelete);
+        
+        
         // 2. count their co-vis kpt number, and build co-vis.
         if(nCountCoVisID>0){
-            assert(nCountCoVisID ==  mKeyPointIDManager.sizeCoVisKptIDs(nPrevFrameID, nCurFrameID));
+            // the assert isnot true now, due to the wrong corresponding between KF1vFm2 and KF1vFm3;
+            //assert(nCountCoVisID ==  mKeyPointIDManager.sizeCoVisKptIDs(nPrevFrameID, nCurFrameID));
             nVecCoVisFramePairAndWeight.push_back(CoVisFramePairAndWeight(nPrevFrameID, nCurFrameID, nCountCoVisID));
             
             nVecFrameIDsDirectAdjoin.push_back(nPrevFrameID);
@@ -149,10 +189,8 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
     
     // Method 2: directly find co-vis Keypoint between current frame and KF which co-vis KptID and MpID,
     //           which is different to find co-vis by descriptor in KeyPointManager::track;
-    if(false){
-        // TODO: Test.
-        throw;
-        TpVecFrameID nVecTryToCoVisKFFrmID; // how to get it.
+    if(true && mFuncGetCoVisKFFrameID){
+        TpVecFrameID nVecTryToCoVisKFFrmID = mFuncGetCoVisKFFrameID(nCurFrameID); // how to get it.
         for(size_t nIdx=0,nSz = nVecTryToCoVisKFFrmID.size();nIdx<nSz;++nIdx){
             TpFrameID nFrmIDKF = nVecTryToCoVisKFFrmID[nIdx];
             if(std::find(nVecFrameIDsDirectAdjoin.begin(), nVecFrameIDsDirectAdjoin.end(), nFrmIDKF)==nVecFrameIDsDirectAdjoin.end()){

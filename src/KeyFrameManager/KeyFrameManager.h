@@ -35,7 +35,8 @@ public:
                     }
     bool            isExistingMapPointID(const TpKeyPointID& nKptID){ 
                         //return std::count_if(mMapFromMapPointID2KptID.begin(), mMapFromMapPointID2KptID.end(), [=](TpMapPoint& mMapPoint){ return mMapPoint.getKeyPointID()==nKptID; }); 
-                        return (int)mMapFromKptID2MapPointID.size()>nKptID&&mMapFromKptID2MapPointID[nKptID]!=INVALIDMAPPOINTID;
+                            //log();
+                        return (int)mMapFromKptID2MapPointID.size()>nKptID && mMapFromKptID2MapPointID[nKptID]!=INVALIDMAPPOINTID;
                     }
                     
     TpMapPointID    generateOneMapPointID(const TpKeyPointID& nKptID){ 
@@ -54,6 +55,9 @@ public:
                         
                         return nMapPointID;
                     }
+    void log(void)const{
+       //for(int nIdx=0;nIdx<mMapFromKptID2MapPointID.size();++nIdx){cout << "Check KptID|MpID:"<<nIdx<<"|"<<mMapFromKptID2MapPointID[nIdx]<<endl;} 
+    }
                     
     TpMapPoint&     MapPoint(const TpMapPointID nMapPointID){
                         assert(nMapPointID < (int)mMapFromMapPointID2KptID.size());
@@ -145,6 +149,7 @@ public:
     void                    createOneKeyFrame(Type::Frame& fFrame,const KeyPointManager::FrameMatchResult& mFrameMatchResult,
                                     KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
     bool                    isKeyFrame(const TpFrameID nFrameID){
+                                //if(mMapKFID2FrameID.empty())cout<<"empty kf"<<endl;else cout << "find kf"<<mMapKFID2FrameID[0]<<endl;
                                 return std::count(mMapKFID2FrameID.begin(), mMapKFID2FrameID.end(), nFrameID);
                             }
     
@@ -188,6 +193,7 @@ protected:
                                 if(nKFID!=(int)mMapKFID2FrameID.size())
                                     throw;
                                 mMapKFID2FrameID.push_back(fFrame.FrameID());
+                                //cout << "add Kf" << nKFID << "|" << fFrame.FrameID() <<endl;
                                 return nKFID;
                             }
                             
@@ -202,6 +208,7 @@ private:
     list<TpKeyPointID>                  mLstFirstDetectedKptIDBeforKF;
 private:
     DebugManager::DebugKeyFrameGenerationInfo   mDebugKeyFrameGenerationInfo;
+    
 };
 
 typedef shared_ptr<KeyFrameManager> PtrKeyFrameManager;

@@ -138,6 +138,8 @@ public:
     }
     */
     void buildCoVisBetween(TpPtrNode pNodeMaster, TpPtrNode pNodeSlaver, const CoVisFramePairAndWeight& nCoVisFramePairAndWeight){
+        cout << "add CoVis:FrmIDMaster|Slaver|Weight-" << getFrameIDTemplate(pNodeMaster->getData()) 
+                                                <<"-" << getFrameIDTemplate(pNodeSlaver->getData()) <<"-"<<nCoVisFramePairAndWeight.getSizeCoVisKpts() <<endl;
         this->addEdgeBidirectional(pNodeMaster, pNodeSlaver);
    
         pNodeMaster->Data().addCoVisFramePairAndWeight(nCoVisFramePairAndWeight);

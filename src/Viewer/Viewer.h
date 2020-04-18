@@ -52,10 +52,14 @@ public:
     void addCameraPose(cv::Vec3f p){ mVecPose.push_back(p); setUpdateDisplay(true);}
     virtual void dodraw(void) override;
     void         clear(void){mVecPose.clear(); setUpdateDisplay(true);}
+    
+    void         setDrawVirtualPoint(bool bDraw){mBoolDrawVirtualPoint = bDraw; setUpdateDisplay(true); }
 private:
     void drawVirtualPointInSimulator(void);
     
     std::vector<cv::Vec3f> mVecPose;
+    
+    bool mBoolDrawVirtualPoint;
 };
 
 class ImageWidget: public QWidget{

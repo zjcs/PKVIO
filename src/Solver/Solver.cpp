@@ -80,13 +80,13 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Converter::toSE3Quat(cv::Mat(nPtrCameraPose->getMatx44f())));
-        vSE3->setFixed(nFrameID==0);
+        vSE3->setFixed(nFrameID==1 && nMapFrameID2CameraPose.size()>1);
         vSE3->setId(nFrameID);
         optimizer.addVertex(vSE3);
         assert(nFrameID>=0);
         nGraphNodeID = std::max(nGraphNodeID, (unsigned int)nFrameID);
         
-        cout << "Frame ID-Value: " << nFrameID << " - " << nPtrCameraPose->getPosition().t() << endl;
+        //cout << "Frame ID-Value: " << nFrameID << " - " << nPtrCameraPose->getPosition().t() << endl;
     }
     
     for(auto Iter=nMapMapPointID2MapPoint3D.begin(),EndIter=nMapMapPointID2MapPoint3D.end();Iter!=EndIter;++Iter){
@@ -100,7 +100,7 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         vPoint->setFixed(DebugManager::DebugControl().mBoolMapPointFixed);
         optimizer.addVertex(vPoint);
         
-        cout << "MpPnt ID-Value: " << nMapPointID << " - " << nMapPoint3D << endl;
+        //cout << "MpPnt ID-Value: " << nMapPointID << " - " << nMapPoint3D << endl;
     }
     
     for(auto Iter=nVecVisualMeasurement.begin(),EndIter=nVecVisualMeasurement.end();Iter!=EndIter;++Iter){
@@ -132,7 +132,7 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         e->cx = nPtrCameraStereo->getInnerParam().getcx();
         e->cy = nPtrCameraStereo->getInnerParam().getcy();
         
-        cout << "Measu ID-FrmID-MpID-Value: " << nKeyPoint.class_id << " - " <<nVisualMeasurement.mFrameID <<"-" << nVisualMeasurement.mMapPointID<<"-" << nKeyPointUndistor.pt << endl;
+        //cout << "Measu ID-FrmID-MpID-Value: " << nKeyPoint.class_id << " - " <<nVisualMeasurement.mFrameID <<"-" << nVisualMeasurement.mMapPointID<<"-" << nKeyPointUndistor.pt << endl;
 
         optimizer.addEdge(e);
     }

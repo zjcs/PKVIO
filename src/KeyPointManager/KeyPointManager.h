@@ -43,6 +43,12 @@ public:
     cv::Mat                     showMatchResult(const TpFrameID nFrameIDMaster,const TpFrameID nFrameIDSlaver, bool bShow);
     
     bool                        getTrackingKptDescriptorMatchResult(const TpFrameID nFrameIDMaster,const TpFrameID nFrameIDSlaver, TpOneFrameKptDescriptor& fKptsDesc, TpDescriptorMatchResult& nMatchResult);
+    
+    inline void                 updateKFInHistory(void){
+                                    mFrameHistoryRecord.updateSpecial();
+                                    mFrameKptsDescriptorHistoryRecord.updateSpecial();
+                                    mFrameMatchResultHistoryRecord.updateSpecial();
+                                }
 protected:
     void                        track(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
                                       TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult);

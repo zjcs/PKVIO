@@ -9,6 +9,7 @@ TpFuncIsIDAndFrameKptsDescriptorMatch
                             FuncIsIDAndFrameKptsDescriptorMatch = [](TpOneFrameKptDescriptor&fFrame,const TpFrameID nFrameID)->bool {return fFrame.FrameID()==nFrameID;};
 TpFuncIsFrameStasify        FuncIsKeyFrame = [](TpOneFrameKptDescriptor& T)->bool{ throw; return false; };
 TpFuncIsFrameStasify        FuncIsNotKeyFrame = [](TpOneFrameKptDescriptor& T)->bool{return !FuncIsKeyFrame(T);};
+TpFuncIsKeyFrameByFrameID   FuncIsKeyFrameByFrameID = [](TpFrameID nFrmID){ throw; return false;};
 //
 //DescriptorHistory::DescriptorHistory() 
 //: mHistory(20+5)

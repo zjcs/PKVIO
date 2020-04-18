@@ -53,8 +53,8 @@ FrameMatchResult& KeyPointManager::solve ( const Type::Frame& f )
     mFrameKptsDescriptorHistoryRecord.push(nKptsDescriptors);
     const StereoFrame& fStereoFrame = dynamic_cast<const StereoFrame&>(f);
     mFrameHistoryRecord.push(fStereoFrame);
-    
     mFrameMatchResultHistoryRecord.push(getFrameMatchResult());
+    
     return getFrameMatchResult();
 }
 
@@ -136,7 +136,18 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
         mPrevAndCurLeftKptsDescriptor.mKeyPointsLeft    = fFrmKptDescLast.mKeyPointsLeft;
         mPrevAndCurLeftKptsDescriptor.mDescriptorsRight = fFrmKptDescCur.mDescriptorsLeft;
         mPrevAndCurLeftKptsDescriptor.mKeyPointsRight   = fFrmKptDescCur.mKeyPointsLeft;
-        return mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+        //return mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+        
+        if(DebugManager::DebugControl().mBoolShowMatchResult){
+            const StereoFrame& fCurStereoFrame      = dynamic_cast<const StereoFrame&>(fCurFrame);
+            const StereoFrame& fLastStereoFrame     = dynamic_cast<const StereoFrame&>(mFrameHistoryRecord.get(fFrmKptDescLast.FrameID()));
+            StereoFrame mPrevLeftAndCurLeftFrame    = constructTrackFrame(fLastStereoFrame, fCurStereoFrame);
+            auto m = mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+            mPtrDesciptorMatcher->showMatchResult(mPrevLeftAndCurLeftFrame, mPrevAndCurLeftKptsDescriptor, m, "PrevLeft | CurLeft - Match Result");
+            return m;
+        }else{
+            return mPtrDesciptorMatcher->match(mPrevAndCurLeftKptsDescriptor);
+        }
     };
     
     // Step 1. track from last frame.
@@ -155,10 +166,19 @@ void KeyPointManager::track(const Type::Frame& fCurFrame, const PKVIO::KeyPointM
     // Step 2. track from last kf frame.
     int nSzKFToTrack    = DebugManager::DebugControl().mMaxKeyFramesToMatchInTrack;
     if(nSzKFToTrack>0){
-        throw; // not test now.
+        //throw; // not test now.
+        std::set<pair<TpFrameID,TpFrameID>> nSetFrameIDTracked;
+        for(size_t nIdx=0;nIdx<nOuterMatchResult.size();++nIdx){
+            TpDescriptorMatchResult& fKptDesc = nOuterMatchResult[nIdx];
+            nSetFrameIDTracked.insert(pair<TpFrameID,TpFrameID>(fKptDesc.getFrameIDLeft(), fKptDesc.getFrameIDRight()));
+        }
+        
         auto nVecKFKptDesc  = mFrameKptsDescriptorHistoryRecord.getLastKeyFrames(nSzKFToTrack);
-        for(int nIdxKFTOTrack=0;nIdxKFTOTrack<nSzKFToTrack;++nIdxKFTOTrack){
+        for(size_t nIdxKFTOTrack=0;nIdxKFTOTrack<nVecKFKptDesc.size();++nIdxKFTOTrack){
             TpOneFrameKptDescriptor&    fKFKptDesc = nVecKFKptDesc[nIdxKFTOTrack];
+            if(nSetFrameIDTracked.count(pair<TpFrameID,TpFrameID>(fKFKptDesc.FrameIDLeft(), fCurFrameKptDescriptor.FrameIDLeft())))
+                continue;
+            cout << "Track KF - KFID:" << fKFKptDesc.FrameID() << endl;
             TpDescriptorMatchResult mPrevKFAndCurMatchResult = FuncTrack(fKFKptDesc, fCurFrameKptDescriptor);
             nOuterMatchResult.push_back(mPrevKFAndCurMatchResult);
         }

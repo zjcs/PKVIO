@@ -102,8 +102,8 @@ public:
     const cv::Matx44f&  getMatx44f(void)const{return mPoseMatx44f;}
     
     cv::Vec3f           getPosition(void){ return Type::cvtMatx44fToPosition(getMatx44f()); }
-    cv::Vec3f           cvtToWorld(const cv::Vec3f& nPtInWorld)const{return Type::project(mPoseMatx44f, nPtInWorld); };
-    cv::Vec3f           cvtToCamera(const cv::Vec3f& nPtInCamera)const{ return Type::project(mPoseMatx44f.inv(), nPtInCamera);};
+    cv::Vec3f           cvtToCamera(const cv::Vec3f& nPtInWorld)const{return Type::project(mPoseMatx44f, nPtInWorld); };
+    cv::Vec3f           cvtToWorld(const cv::Vec3f& nPtInCamera)const{ return Type::project(mPoseMatx44f.inv(), nPtInCamera);};
     
     
 private:

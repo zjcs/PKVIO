@@ -74,6 +74,21 @@ public:
             mKptR.push_back(mKeyPointsRight[nM.trainIdx]);
         }
     }
+    
+    void deleteMatch(const std::vector<int>& nVecMatchIndexToDel){
+        if(nVecMatchIndexToDel.empty())return;
+        
+        assert(std::is_sorted(nVecMatchIndexToDel.begin(), nVecMatchIndexToDel.end()));
+        std::set<int> nSetMatchIndexToDel(nVecMatchIndexToDel.begin(), nVecMatchIndexToDel.end());
+        TpVecMatchResult mMatchCopy;
+        for(size_t nIdx=0;nIdx<mMatch.size();++nIdx){
+            if(nSetMatchIndexToDel.count(nIdx))
+                continue;
+            mMatchCopy.push_back(mMatch[nIdx]);
+        }
+        std::swap(mMatchCopy, mMatch);
+    }
+    
 private:
     TpVecMatchResult                mMatch;
     TpFrameID                       mFrameIDLeft,   mFrameIDRight;
@@ -83,7 +98,7 @@ private:
 class FrameMatchResult{
 public:
     FrameMatchResult():mbInnerFrameDescriptorMatchResult(false){}
-    const TpFrameID                         FrameID(void){
+    const TpFrameID                         FrameID(void) const{
             if( size() == 0){
                 cout << "Error: try to get the FrameID of Empty FrameMatchResult is illegal. exit." <<endl;
                 throw;

@@ -2,6 +2,9 @@
 #define __DATAHISTORYTEMPLATE_H__
 
 #include "FixLengthQueue.h"
+#include <iostream>
+
+using namespace std;
 
 namespace PKVIO
 {
@@ -33,18 +36,41 @@ public:
     }
     
     //operator= (DescriptorHistory& op){}
-
-    void            push(const T& One){return mHistory.push(One);}
+    void            initDataSpecialFunction(std::function<bool(const T&)> nFunc){mFuncIsSpecial = nFunc;}
+    
+    void            push(const T& One){
+                        mHistory.push(One);
+                        //updateSpecial();  // the Special flag is setted after data, so the calling here always is not Special;
+                    }
+    void            updateSpecial(void){
+                        if(mFuncIsSpecial&&mFuncIsSpecial(back())) {
+                            mHistorySpecial.push(back());  
+                            //cout << "Push Kf" <<endl;
+                        } 
+                    }
     bool            isExisting(const TpID nID){
                         for(auto Iter = mHistory.begin(), EndIter = mHistory.end(); Iter!=EndIter; ++Iter) {
                             T& h = *Iter;
                             if(mFuncIsIDAndTMatch(h, nID))
                                 return true;
                         }
+                        
+                        for(auto Iter = mHistorySpecial.begin(), EndIter = mHistorySpecial.end(); Iter!=EndIter; ++Iter) {
+                            T& h = *Iter;
+                            if(mFuncIsIDAndTMatch(h, nID))
+                                return true;
+                        }
+                        
                         return false;
                     }
     T&              get(const TpID nID){
                         for(auto Iter = mHistory.begin(), EndIter = mHistory.end(); Iter!=EndIter; ++Iter) {
+                            T& h = *Iter;
+                            if(mFuncIsIDAndTMatch(h, nID))
+                                return h;
+                        }
+                        
+                        for(auto Iter = mHistorySpecial.begin(), EndIter = mHistorySpecial.end(); Iter!=EndIter; ++Iter) {
                             T& h = *Iter;
                             if(mFuncIsIDAndTMatch(h, nID))
                                 return h;
@@ -57,13 +83,23 @@ public:
     TpVecTs         getLastSeveral(int nSz, std::function<bool(T&)> bFuncIsThisToBeExcluded = [](T&)->bool{return false;}){
                         TpVecTs vTs;
                         vTs.reserve(nSz);
-                        int nNotUsed = nSz;
-                        for(auto iter = mHistory.rbegin(), EndIter = mHistory.rend(); iter!=EndIter && (nNotUsed--); ++iter) {
+                        for(auto iter = mHistorySpecial.rbegin(), EndIter = mHistorySpecial.rend(); iter!=EndIter && vTs.size() < nSz; ++iter) {
+                            vTs.push_back(*iter);
+                        }
+                        // free the memory of last NotUsed place.
+                        vTs.resize(vTs.size());
+                        return vTs;
+                        
+                        
+                        for(auto iter = mHistory.rbegin(), EndIter = mHistory.rend(); iter!=EndIter && vTs.size() < nSz; ++iter) {
                             if(bFuncIsThisToBeExcluded(*iter))
                                 continue;
                             vTs.push_back(*iter);
                         }
                         // free the memory of last NotUsed place.
+                        vTs.resize(vTs.size());
+                        return vTs;
+                        
                         auto LastIter = vTs.begin();
                         std::advance(LastIter, vTs.size());
                         vTs.erase(LastIter, vTs.end());
@@ -76,6 +112,9 @@ public:
     int             size(void){return (int)mHistory.size();}
 protected:
    Type::FixLengthQueue<T>  mHistory;
+   Type::FixLengthQueue<T>  mHistorySpecial;
+   
+   std::function<bool(const T&)>  mFuncIsSpecial;
 private:
    TpFuncIsIDAndTMatch      mFuncIsIDAndTMatch;
 };

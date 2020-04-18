@@ -135,6 +135,7 @@ void KeyFrameManager::createOneKeyFrame(Type::Frame& fFrame,const KeyPointManage
         // only this KF observe this kpt, other observe is non-KF.
         // so treat this new Kpts as other Kpt below, add their obersevation once.
         }
+        mMapPointIDManager.log();
     }
    
     {
@@ -169,9 +170,19 @@ void KeyFrameManager::collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFr
 int KeyFrameManager::countTrackKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
     Tools::Timer tTimer("countTrackKptIDsWithMapPointID", false , &mDebugKeyFrameGenerationInfo.mTimeCostCountTrackedMapPoint);
     TpVecKeyPointID nKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
-    return std::count_if(nKptIDs.begin(),nKptIDs.end(),[&](const TpKeyPointID nKptID) {
+    int nCount = std::count_if(nKptIDs.begin(),nKptIDs.end(),[&](const TpKeyPointID nKptID)->bool {
+        //return mMapPointIDManager.isExistingMapPointID(nKptID);
+        //TpMapPointID nMpID = INVALIDMAPPOINTID;
+        //bool b = mMapPointIDManager.isExistingMapPointID(nKptID, nMpID);
+        //cout << "count Track one:KptID|MpID-"<< nKptID<<"|"<<nMpID<< "|" <<b <<  endl;
         return mMapPointIDManager.isExistingMapPointID(nKptID);
     });
+    //cout << "Count Track count:" << nCount<<endl;
+    //for(int nIdx=0;nIdx<nKptIDs.size();++nIdx)cout << "count-kptID:" << nIdx<< "|" <<nKptIDs[nIdx]<<endl;
+    //cout << "count-MpID:" << endl;
+    //mMapPointIDManager.log();
+    //cout << "count-MpID:end" << endl;
+    return nCount;
 }
 
 
