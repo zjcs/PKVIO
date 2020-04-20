@@ -133,5 +133,16 @@ cv::Vec3f project(const cv::Matx44f& T, const cv::Vec3f& pt){
     return cv::Vec3f(proj(0),proj(1),proj(2));
 }
 
+cv::Vec2f project(const cv::Matx33f& P, const cv::Matx44f& T, const cv::Vec3f& pt){
+    cv::Vec3f ptInCam = project(T, pt);
+    cv::Vec3f ptInImg = P*ptInCam/ptInCam(2);
+    //cout << P << ptInCam << ptInImg <<endl;
+    return cv::Vec2f(ptInImg(0),ptInImg(1));
+}
+
+cv::Vec2f projectError(const cv::Matx33f& P, const cv::Matx44f& T, const cv::Vec3f& pt, const cv::Vec2f& pt2d){
+    return project(P,T,pt) - pt2d;
+}
+
 }
 }

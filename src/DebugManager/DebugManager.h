@@ -41,6 +41,12 @@ public:
     
     bool mBoolShowMatchResult       = false;
     
+    bool mBoolLogSolverVtxEdgInfo   = false;
+    bool mBoolLogStereoTriangular   = true;
+    
+    bool mBoolTriangularByInverseDepth = true;
+    bool mBoolAddStereoMatchInSolver   = false;
+    
     const std::string str(void)const{
         stringstream s;
         s << endl << "Debug Control: " <<endl

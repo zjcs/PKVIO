@@ -48,6 +48,8 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
                    const TpVecVisualMeasurement& nVecVisualMeasurement, const TpPtrCameraStereo nPtrCameraStereo) 
 {
     Timer::Timer nTimerSolver("G2OSolver", true);
+    cout << "Solver: Camera|MpPnt|VisualMeasure: " << nMapFrameID2CameraPose.size()
+         << "|" <<nMapMapPointID2MapPoint3D.size() << "|" <<nVecVisualMeasurement.size() <<endl;
     
     int     nIterations = 10;
     bool    bRobust     = true;
@@ -86,7 +88,8 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         assert(nFrameID>=0);
         nGraphNodeID = std::max(nGraphNodeID, (unsigned int)nFrameID);
         
-        //cout << "Frame ID-Value: " << nFrameID << " - " << nPtrCameraPose->getPosition().t() << endl;
+        if(DebugManager::DebugControl().mBoolLogSolverVtxEdgInfo)
+            cout << "Frame ID-Value: " << nFrameID << " - " << nPtrCameraPose->getPosition().t() << endl;
     }
     
     for(auto Iter=nMapMapPointID2MapPoint3D.begin(),EndIter=nMapMapPointID2MapPoint3D.end();Iter!=EndIter;++Iter){
@@ -100,7 +103,8 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         vPoint->setFixed(DebugManager::DebugControl().mBoolMapPointFixed);
         optimizer.addVertex(vPoint);
         
-        //cout << "MpPnt ID-Value: " << nMapPointID << " - " << nMapPoint3D << endl;
+        if(DebugManager::DebugControl().mBoolLogSolverVtxEdgInfo)
+            cout << "MpPnt ID-Value: " << nMapPointID << " - " << nMapPoint3D << endl;
     }
     
     for(auto Iter=nVecVisualMeasurement.begin(),EndIter=nVecVisualMeasurement.end();Iter!=EndIter;++Iter){
@@ -132,7 +136,12 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         e->cx = nPtrCameraStereo->getInnerParam().getcx();
         e->cy = nPtrCameraStereo->getInnerParam().getcy();
         
-        //cout << "Measu ID-FrmID-MpID-Value: " << nKeyPoint.class_id << " - " <<nVisualMeasurement.mFrameID <<"-" << nVisualMeasurement.mMapPointID<<"-" << nKeyPointUndistor.pt << endl;
+        
+        if(DebugManager::DebugControl().mBoolLogSolverVtxEdgInfo){
+            e->computeError();
+            auto err = e->error();
+            cout << "Measu ID-FrmID-MpID-Value-Error: " << nKeyPoint.class_id << " - " <<nVisualMeasurement.mFrameID <<"-" << nVisualMeasurement.mMapPointID<<"-" << nKeyPointUndistor.pt <<"-"<<err.transpose()<< endl;
+        }
 
         optimizer.addEdge(e);
     }

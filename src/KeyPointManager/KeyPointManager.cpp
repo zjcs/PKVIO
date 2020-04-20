@@ -356,7 +356,7 @@ void KeyPointManager::trackBySimulator(const Type::Frame& fCurFrame, PKVIO::KeyP
                 cv::Vec3f nPtProj = cv::Matx33f(nInnerMat)*nPtCam;
                 nVecKpt.push_back(cv::KeyPoint(cv::Point2f(nPtProj(0),nPtProj(1)), 1));
                 
-                //cout << "Kpt: World|Came|Pixel-"<<nVecMapPt3D[nIdx]<<"|"<<nPtCam3D<<"|"<<nPtProj<<endl;
+                cout << "Kpt: World|Came|Pixel-"<<nVecMapPt3D[nIdx]<<"|"<<nPtCam3D<<"|"<<nPtProj<<endl;
             }
         };
         

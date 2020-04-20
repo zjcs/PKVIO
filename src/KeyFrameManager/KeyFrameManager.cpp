@@ -41,7 +41,7 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
     generateOneFrameCameraPose(fFrame);
     
     //int nCountSumTrackKpts        = mFrameKptIDMgr.sizeKeyPointsWithID();
-    int nCountSumTrackKpts          = countTrackKptIDsWithMapPointID(mFrameKptIDMgr);
+    int nCountSumTrackKpts          = countTrackKptIDsWithMapPointIDAndValid(mFrameKptIDMgr);
     int nCountKptsOnThisFrame       = mFrameKptIDMgr.sizeKeyPoints();
     
     EnSLAMState eSLAMState          = updateTrackState(nCountSumTrackKpts, nCountKptsOnThisFrame);
@@ -164,6 +164,25 @@ void KeyFrameManager::collectFirstDetectedKeyPointOnNonKeyFrame(Type::Frame& fFr
     Tools::Timer tTimer("collectDetectedKptID", false, &mDebugKeyFrameGenerationInfo.mTimeCostAccFirstDetectedKptIDs);
     TpVecKeyPointID nLstFirstDetectedKptID = mFrameKptIDMgr.getFirstDetectedKptIDs();
     mLstFirstDetectedKptIDBeforKF.insert(mLstFirstDetectedKptIDBeforKF.end(), nLstFirstDetectedKptID.begin(),nLstFirstDetectedKptID.end());
+}
+
+int KeyFrameManager::countTrackKptIDsWithMapPointIDAndValid(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr) {
+    Tools::Timer tTimer("countTrackKptIDsWithMapPointIDAndValid", false , &mDebugKeyFrameGenerationInfo.mTimeCostCountTrackedMapPoint);
+    TpVecKeyPointID nKptIDs = mFrameKptIDMgr.getAllKeyPointIDs();
+    int nCount = std::count_if(nKptIDs.begin(),nKptIDs.end(),[&](const TpKeyPointID nKptID)->bool {
+        //return mMapPointIDManager.isExistingMapPointID(nKptID);
+        //TpMapPointID nMpID = INVALIDMAPPOINTID;
+        //bool b = mMapPointIDManager.isExistingMapPointID(nKptID, nMpID);
+        //cout << "count Track one:KptID|MpID-"<< nKptID<<"|"<<nMpID<< "|" <<b <<  endl;
+        //return mMapPointIDManager.isExistingMapPointID(nKptID);
+        return mMapPointIDManager.isExistingMapPointID(nKptID) && mMapPointIDManager.MapPointByKeyPointID(nKptID).getMapPoint3DValid();
+    });
+    //cout << "Count Track count:" << nCount<<endl;
+    //for(int nIdx=0;nIdx<nKptIDs.size();++nIdx)cout << "count-kptID:" << nIdx<< "|" <<nKptIDs[nIdx]<<endl;
+    //cout << "count-MpID:" << endl;
+    //mMapPointIDManager.log();
+    //cout << "count-MpID:end" << endl;
+    return nCount;
 }
 
 

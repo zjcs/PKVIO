@@ -153,6 +153,7 @@ public:
                                 return std::count(mMapKFID2FrameID.begin(), mMapKFID2FrameID.end(), nFrameID);
                             }
     
+    int                     countTrackKptIDsWithMapPointIDAndValid(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
     int                     countTrackKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
     
     void                    getKptIDsWithMapPointID(KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr,

@@ -37,6 +37,10 @@ void filter(vector<T>& nVecInput, const vector<bool>& nFilterTrueSave){
 bool triangulation(const cv::Point2f& Pl2D, const cv::Point2f& Pr2D, const float fx, const float& nBaseline, float& nDepthInLeftView);
 bool triangulation(const cv::Point2f& Pl2D, const cv::Point2f& Pr2D, const cv::Matx44f& nPrTPl, cv::Vec3f& Pl3D);
 
+bool triangulation(const cv::Matx33f& Pl, const cv::Matx44f& Tl, const cv::Point2f& Ptl,const cv::Matx33f& Pr, const cv::Matx44f& Tr, const cv::Point2f& Ptr, cv::Vec3f& Ptw);
+
+bool triangulation(const cv::Matx33f& Pl, const cv::Point2f& Ptl,const cv::Matx33f& Pr, const cv::Point2f& Ptr, const cv::Matx44f& PrTPl, cv::Vec3f& PtInCl);
+bool triangulation(const cv::Matx33f& Pl, const cv::Point2f& Ptl,const cv::Matx33f& Pr, const cv::Point2f& Ptr, const cv::Matx44f& PrTPl, const cv::Matx44f& PlTPtw, cv::Vec3f& Ptw);
 
 template<typename TpKey, typename TpValue>
 map<TpKey, TpValue> buildMap(const vector<TpKey>& vKeys,const vector<TpValue>& vValues)

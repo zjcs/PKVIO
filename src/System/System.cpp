@@ -582,10 +582,11 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                     nMapKptIdx2MpID[nKptIdxLeft] = nMapPointIDNew;
                 }
                 
-                const TpVecKeyPoints& nVecKptLeft = mKeyPointMgr.getDescriptor(mCurFrame.FrameID()).mKeyPointsLeft;
-                const TpVecKeyPoints& nVecKptRight = mKeyPointMgr.getDescriptor(mCurFrame.FrameID()).mKeyPointsRight;
-                const TpVecMatchPairs& nInnerMatch = mKeyPointMgr.getFrameMatchResult().getInnerFrameDescriptorMatchResult().getMatchPairs();
                 cout << "For Key Point triangular on KF" <<endl;
+                const TpVecKeyPoints& nVecKptLeft   = mKeyPointMgr.getDescriptor(mCurFrame.FrameID()).mKeyPointsLeft;
+                const TpVecKeyPoints& nVecKptRight  = mKeyPointMgr.getDescriptor(mCurFrame.FrameID()).mKeyPointsRight;
+                const TpVecMatchPairs& nInnerMatch  = mKeyPointMgr.getFrameMatchResult().getInnerFrameDescriptorMatchResult().getMatchPairs();
+                TpPtrCameraPose nPtrCameraPoseCur   = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID());
                 for(int nIdxMatch=0,nSzMatch = nInnerMatch.size();nIdxMatch<nSzMatch;++nIdxMatch){
                     const TpMatchPair& nMatchPair = nInnerMatch[nIdxMatch];
                     const TpKeyPointIndex& nMatchKptIdxLeft  = nMatchPair.first;
@@ -598,15 +599,52 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                     TpKeyPoint nKptLeftUndistor  = nCameraLeft.getInnerParam().undistor(nVecKptLeft[nMatchKptIdxLeft]);
                     TpKeyPoint nKptRightUndistor = nCameraRight.getInnerParam().undistor(nVecKptRight[nMatchKptIdxRight]);
                     
+                    
+                    // two method comparision:
+                    // method 1: Stereo matching to produce a inverse-depth-based 3D Point
+                    // method 2: Stereo matching to produce a 3D point
+                    // method 1 has a better performance, due to the projection is always near to zero to master view, and less noise affected by slave view;
+                    
+                    /*
+                    // method 1. triangular by baseline;
                     float nDepthInLeftView = 0;
                     //if(Tools::triangulation(nKptLeftUndistor.pt, nKptRightUndistor.pt, 435.262, 47.912663, nDepthInLeftView)){
                     if(Tools::triangulation(nKptLeftUndistor.pt, nKptRightUndistor.pt, 435.262, 47.912663, nDepthInLeftView)){
                         TpKeyPoint nKptLeftUndistorNorm  = nCameraLeft.getInnerParam().cvtPixelToNorm(nKptLeftUndistor);
                         cv::Vec3f  nMp3DLeftView(nKptLeftUndistorNorm.pt.x*nDepthInLeftView,
                                                  nKptLeftUndistorNorm.pt.y*nDepthInLeftView, nDepthInLeftView);
-                        auto nMp3DWorld = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID())->cvtToWorld(nMp3DLeftView);
+                        
+                        auto nMp3DWorld = nPtrCameraPoseCur->cvtToWorld(nMp3DLeftView);
                         nMp.initMapPoint3D(cv::Point3f(nMp3DWorld));
-                        //cout << "Pixel Left|Right - PtInWorld(LeftView): " << nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt << "  - "<< nMp3DWorld <<endl;
+                        
+                        if(DebugManager::DebugControl().mBoolLogStereoTriangular){
+                            cout << "MPID|Pt2D L|R-PtInWorld: " << nMp.getMapPointID()<<"|"<< nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt 
+                                 << " - " << nMp3DWorld <<endl;
+                            cout << "    ProjectError: Left|Right - " <<
+                            Type::projectError(nCameraInnerLeft.getInnerMatx33f(), nPtrCameraPoseCur->getMatx44f(), nMp3DWorld, nKptLeftUndistor.pt).t()
+                            <<
+                            Type::projectError(nCameraInnerRight.getInnerMatx33f(), nPrTPl*nPtrCameraPoseCur->getMatx44f(), nMp3DWorld, nKptRightUndistor.pt).t() << endl;
+                        }
+                    }
+                    */
+                    cv::Vec3f nMp3DWorld; bool bSucess = false;
+                    // method 2. triangular with 3D Position;
+                    bSucess = DebugManager::DebugControl().mBoolTriangularByInverseDepth
+                        ? Tools::triangulation(nCameraInnerLeft.getInnerMatx33f(), nKptLeftUndistor.pt ,nCameraInnerRight.getInnerMatx33f(), nKptRightUndistor.pt, nPrTPl, nPtrCameraPoseCur->getMatx44f(), nMp3DWorld)
+                        : Tools::triangulation(nCameraInnerLeft.getInnerMatx33f(), nPtrCameraPoseCur->getMatx44f(), nKptLeftUndistor.pt ,nCameraInnerRight.getInnerMatx33f(), nPrTPl*nPtrCameraPoseCur->getMatx44f(), nKptRightUndistor.pt, nMp3DWorld) ;
+                        
+                    // method 1. triangular by inverse depth;
+                    if(bSucess){
+                        nMp.initMapPoint3D(cv::Point3f(nMp3DWorld));
+                        
+                        if(DebugManager::DebugControl().mBoolLogStereoTriangular){
+                            auto errL = Type::projectError(nCameraInnerLeft.getInnerMatx33f(), nPtrCameraPoseCur->getMatx44f(), nMp3DWorld, nKptLeftUndistor.pt);
+                            auto errR = Type::projectError(nCameraInnerRight.getInnerMatx33f(), nPrTPl*nPtrCameraPoseCur->getMatx44f(), nMp3DWorld, nKptRightUndistor.pt);
+                            
+                            cout << "MPID|Pt2D L|R-PtInWorld: " << nMp.getMapPointID()<<"|"<< nKptLeftUndistor.pt << "|" << nKptRightUndistor.pt 
+                                 << " - " << nMp3DWorld <<endl;
+                            cout << "    ProjectError: Left|Right - " << errL.t() << errR.t() << endl;
+                        }
                     }
                 }
                 //cout <<endl;
@@ -690,16 +728,17 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
         if(nMapMapPointID2MapPoint3D.find(nMeasurement.mMapPointID) == nMapMapPointID2MapPoint3D.end()){
             //nMapMapPointID2MapPoint3D[nMeasurement.mMapPointID] = TpMapPoint3D();
             const KeyFrameManager::TpMapPoint& nMp = mPtrKeyFrameMgr->getMapPointIDManager().MapPoint(nMeasurement.mMapPointID);
+            
             if(!nMp.getMapPoint3DValid())
                 continue;
+            
             nMapMapPointID2MapPoint3D[nMeasurement.mMapPointID] = nMp.getMapPoint3D();
         }
     }
     
     Type::TpPtrCameraStereo nPtrCameraStereo = mPtrDataset->getPtrCamera();
     
-    
-    for(int nIdxMeasurement=0,nSzMeasurements = nVecKptIDMapPointPairWithFrameID.size();nIdxMeasurement<nSzMeasurements;++nIdxMeasurement){
+    for(size_t nIdxMeasurement=0,nSzMeasurements = nVecKptIDMapPointPairWithFrameID.size();nIdxMeasurement<nSzMeasurements;++nIdxMeasurement){
         auto& nMeasurement = nVecKptIDMapPointPairWithFrameID[nIdxMeasurement];
         TpFrameID nFrameID = nMeasurement.mFrameID;
         if(mKeyPointMgr.getFrameKptsDescriptorHistory().isExisting(nFrameID)){
@@ -723,8 +762,8 @@ cv::Matx44f System::solverCurrentFramePose(const TpFrameID nFrameIDCur) {
             throw;
         }
     }
-#if 0
     
+#if 0
     {
         
     bool bShowAll = false;

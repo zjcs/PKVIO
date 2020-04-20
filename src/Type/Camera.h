@@ -133,11 +133,16 @@ public:
         return cv::Mat(nInnerMat);
     }
     const cv::Mat   getInnerMat(void) const {
+        return cv::Mat(getInnerMatx33f());
+    }
+    
+    const cv::Matx33f getInnerMatx33f(void) const {
         cv::Matx33f nInnerMat = cv::Matx33f::eye();
         nInnerMat(0,0) = getfx(); nInnerMat(1,1) = getfy();
         nInnerMat(0,2) = getcx(); nInnerMat(1,2) = getcy();
-        return cv::Mat(nInnerMat);
+        return nInnerMat;
     }
+    
     const string str(void)const{
         stringstream sStrStream;
         sStrStream<< "  Fxy|Cxy|WxHy: "<<fx<<","<<fy<<","<<cx<<","<<cy<<","<<wx<<","<<hy<<endl;

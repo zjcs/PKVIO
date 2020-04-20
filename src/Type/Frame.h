@@ -61,6 +61,8 @@ public:
 };
 
 cv::Vec3f project(const cv::Matx44f& T, const cv::Vec3f& pt);
+cv::Vec2f project(const cv::Matx33f& P, const cv::Matx44f& T, const cv::Vec3f& pt);
+cv::Vec2f projectError(const cv::Matx33f& P, const cv::Matx44f& T, const cv::Vec3f& pt, const cv::Vec2f& pt2d);
 
 class Frame{
 public:
