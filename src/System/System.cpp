@@ -575,12 +575,18 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                 auto& nMapPointIDMgr = mPtrKeyFrameMgr->getMapPointIDManager();
                 TpVecMapPointID nVecMapPointID = nMapPointIDMgr.getMapPointIDsGeneratedByFrame(mCurFrame.FrameID());
                 map<TpKeyPointIndex, TpMapPointID> nMapKptIdx2MpID;
+                map<TpKeyPointIndex, TpKeyPointID> nMapKptIdx2KptID;
+                TpVecKeyPointID nMpKptID; TpVecKeyPointIndex nMpKptIdx;
                 for(int nIdxMapPointID=0;nIdxMapPointID<nVecMapPointID.size();++nIdxMapPointID){
                     TpMapPointID nMapPointIDNew = nVecMapPointID[nIdxMapPointID];
                     // triangulation;
-                    auto nFrmIDAndKptIdx = nMapPointIDMgr.MapPoint(nMapPointIDNew).getVecMeasurments()[0];
-                    TpKeyPointIndex nKptIdxLeft = nFrmIDAndKptIdx.second;
-                    nMapKptIdx2MpID[nKptIdxLeft] = nMapPointIDNew;
+                    KeyFrameManager::TpMapPoint& nMpPoint = nMapPointIDMgr.MapPoint(nMapPointIDNew);
+                    auto nFrmIDAndKptIdx          = nMpPoint.getVecMeasurments()[0];
+                    TpKeyPointIndex nKptIdxLeft   = nFrmIDAndKptIdx.second;
+                    nMapKptIdx2MpID[nKptIdxLeft]  = nMapPointIDNew;
+                    nMapKptIdx2KptID[nKptIdxLeft] = nMpPoint.getKeyPointID();
+                    nMpKptID.push_back(nMpPoint.getKeyPointID());
+                    nMpKptIdx.push_back(nKptIdxLeft);
                 }
                 
                 cout << "For Key Point triangular on KF: FrameID | NewMpPoint - " << mCurFrame.FrameID() << " | " << nMapKptIdx2MpID.size() <<endl;
@@ -649,7 +655,41 @@ void System::setRunVIO(bool bRunAllFrame /*= true*/) {
                         }
                     }
                 }
-                cout << "     Triangular LRStereoMatch | NewMpPoint- " << nCountMpPointLRStereoMatch << " | " << nCountMpPointTriangular << endl;
+                
+                auto nMpKptIDVm = mCoVisMgr.getCoVis(mCurFrame.FrameID(), nMpKptID);
+                int nCountMpPointTriangularByTracking = 0;
+                for(int nIdxKptID=0;nIdxKptID<nMpKptID.size();++nIdxKptID){
+                    auto& nKptIDVm = nMpKptIDVm[nIdxKptID];
+                    TpKeyPointID nKptID = nMpKptID[nIdxKptID];
+                    TpKeyPointIndex nKptIdx = nMpKptIdx[nIdxKptID];
+                    KeyFrameManager::TpMapPoint& nMpPoint = nMapPointIDMgr.MapPointByKeyPointID(nKptID);
+                    if(nMpPoint.getMapPoint3DValid() || nKptIDVm.size()<=2)   // has been initialized by Stereo-Matching above;
+                        continue;
+                    
+                    Tools::TpVecVmTri nVecVmTri;
+                    TpPtrCameraPose nPtrCameraPoseCur   = mPtrKeyFrameMgr->getFrameCameraPose(mCurFrame.FrameID());
+                    cv::Matx44f     nPwTPl = nPtrCameraPoseCur->getMatx44f().inv();
+                    for(int nIdxVm=0;nIdxVm<nKptIDVm.size();++nIdxVm){
+                        TpFrameID       nFrmID  = nKptIDVm[nIdxVm].first;
+                        TpKeyPointIndex nKptIdx = nKptIDVm[nIdxVm].second;
+                        
+                        Tools::TpVmTri nVmTri;
+                        nVmTri.P  = nCameraInnerLeft.getInnerMatx33f();
+                        nVmTri.Pt = mKeyPointMgr.getFrameKptsDescriptorHistory().get(nFrmID).mKeyPointsLeft[nKptIdx].pt;
+                        nVmTri.T  = mPtrKeyFrameMgr->getFrameCameraPose(nFrmID)->getMatx44f()*nPwTPl;
+                        nVecVmTri.push_back(nVmTri);
+                    }
+                    cv::Point2f nPtInCamLeft = mKeyPointMgr.getFrameKptsDescriptorHistory().get(nFrameIDCur).mKeyPointsLeft[nKptIdx].pt;
+                    cv::Vec3f nMp3DInCamLeft;
+                    if(Tools::triangulation(nVecVmTri, nCameraInnerLeft.getInnerMatx33f(), nPtInCamLeft,nMp3DInCamLeft)){
+                        cv::Vec3f nMp3DInWorld = nPtrCameraPoseCur->cvtToWorld(nMp3DInCamLeft);
+                        nMpPoint.initMapPoint3D(nMp3DInWorld);
+                        ++nCountMpPointTriangularByTracking;
+                    }
+                }
+                
+                cout << "     Triangular LRStereoMatch | NewMpPointBy Stereo|Track- " << nCountMpPointLRStereoMatch
+                     << " | " << nCountMpPointTriangular <<"|" << nCountMpPointTriangularByTracking << endl;
                 //cout <<endl;
             }else{
                 // non-kf observe should insert to the mappoint?

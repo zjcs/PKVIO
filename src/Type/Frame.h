@@ -30,12 +30,14 @@ typedef list<TpKeyPointIndex>   TpLstKeyPointIndex;
 typedef vector<TpKeyFrameID>    TpVecKeyFrameID;
 typedef list<TpKeyFrameID>      TpLstKeyFrameID;
 
-extern const TpFrameID      INVALIDFRAMEID;     
-extern const TpKeyPointID   INVALIDKEYPOINTID;     
+extern const TpFrameID          INVALIDFRAMEID;     
+extern const TpKeyPointID       INVALIDKEYPOINTID;     
+extern const TpKeyPointIndex    INVALIDKEYPOINTINDEX;     
 
 inline bool                 isInvalideFrameID(const TpFrameID nFrameID){return nFrameID==INVALIDFRAMEID;}
 inline bool                 isInvalideKeyPointID(const TpKeyPointID nKptID){return nKptID==INVALIDKEYPOINTID;}
 inline bool                 isValideKeyPointID(const TpKeyPointID nKptID){return nKptID!=INVALIDKEYPOINTID;}
+inline bool                 isValideKeyPointIndex(const TpKeyPointIndex nKptIndex){return nKptIndex!=INVALIDKEYPOINTINDEX;}
 
 typedef vector<TpFrameID>               TpVecFrameID;
 typedef set<TpFrameID>                  TpSetFrameID;

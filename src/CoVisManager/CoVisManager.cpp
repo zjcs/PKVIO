@@ -322,6 +322,36 @@ Type::TpVecMatchResult CoVisManager::getCoVis(const Type::TpFrameID nFrameIDFrom
     return nCoVisMatch;
 }
 
+
+std::vector<CoVisManager::TpVecFrameIDKptIndexPair> 
+CoVisManager::getCoVis(const Type::TpFrameID nFrameIDFrom, const Type::TpVecKeyPointID& nVecKptID) 
+{
+    int nSzKptID = nVecKptID.size();
+    std::vector<TpVecFrameIDKptIndexPair>  nCoVisResult(nVecKptID.size(), TpVecFrameIDKptIndexPair());
+    const TpFrameIndex nFrameIndexFrom = mKeyPointIDManager.getFrameIndex(nFrameIDFrom);
+    TpVecKeyPointID nCovisKptID = nVecKptID;
+    for(int nIdxFrm=nFrameIDFrom;nIdxFrm>=0;--nIdxFrm){
+        KeyPointManager::TpOneFrameIDManager& nFrmIDMgr = mKeyPointIDManager.OneFrameIDManagerByFrameIndex(nIdxFrm);
+        TpFrameID nFrmID = mKeyPointIDManager.getFrameID(nIdxFrm);
+        TpVecKeyPointIndex nVecKptIdx = nFrmIDMgr.getKptIndex(nCovisKptID);
+        vector<bool> nVecBoolCoVisKptIdx(nVecKptIdx.size(), false);
+        for(int nIdxKptID=0;nIdxKptID<nVecKptIdx.size();++nIdxKptID){
+            TpKeyPointIndex& nKptIdx = nVecKptIdx[nIdxKptID];
+            if(Type::isValideKeyPointIndex(nKptIdx)){
+                nCoVisResult[nIdxKptID].push_back(std::make_pair(nFrmID, nKptIdx));
+                nVecBoolCoVisKptIdx[nIdxKptID] = true;
+            }
+        }
+        
+        if(DebugManager::DebugControl().mBoolTrackByOpticalFlow){
+            Tools::filter(nCovisKptID, nVecBoolCoVisKptIdx);
+            if(nCovisKptID.size()==0)
+                break;
+        }
+    }
+    return nCoVisResult;
+}
+
 }
 
 }

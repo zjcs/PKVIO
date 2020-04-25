@@ -41,6 +41,38 @@ bool triangulation(const cv::Point2f& Pl2D, const cv::Point2f& Pr2D, const cv::M
     return true;
 }
 
+bool triangulation(const TpVecVmTri& nVecVmTri, const cv::Matx33f& Pl, const cv::Point2f& Ptl, cv::Vec3f& PtInCl){
+    cv::Vec3f NPl = Pl.inv()*cv::Vec3f(Ptl.x, Ptl.y, 1);
+    cv::Mat nCoeffA(nVecVmTri.size(), 3, CV_32FC1);
+    cv::Mat nCoeffb(nVecVmTri.size(), 3, CV_32FC1);
+    for(int nIdxVm=0;nIdxVm<nVecVmTri.size();++nIdxVm){
+        const TpVmTri& nVm = nVecVmTri[nIdxVm];
+        const cv::Matx33f& Pr    = nVm.P;
+        const cv::Matx44f& PrTPl = nVm.T;
+        cout << "PrTPl:" <<endl << PrTPl <<endl;
+        const cv::Point2f& Ptr   = nVm.Pt;
+        cv::Vec3f NPr = Pr.inv()*cv::Vec3f(Ptr.x, Ptr.y, 1);
+        cv::Matx33f R = PrTPl.get_minor<3,3>(0,0);
+        cv::Vec3f   t = (cv::Mat)PrTPl.get_minor<3,1>(0,3);
+        cv::Vec3f   b = NPr - R*NPl;
+        cout << "R:" << endl << R <<endl;
+        //cout << "m:" << endl << m <<endl;
+        cout << "t:" << endl << t.t() <<endl;
+        cout << "b:" << b.t() <<endl;
+        nCoeffA.row(nIdxVm) = b;
+        nCoeffb.row(nIdxVm) = t;
+    }
+    cv::Mat b = nCoeffA.reshape(0,1).t();   // col-vector;
+    cv::Mat t = nCoeffb.reshape(0,1).t();
+    float depth = cv::Mat((b.t()*b).inv()*(b.t()*t)).at<float>(0,0);
+    PtInCl = NPl*depth;
+    cout << "triangulation by track - PtInCl:" << PtInCl <<endl;
+    return depth<=10e3 && depth>=0.1e3; // depth range [0.5,10]m;
+    
+}
+bool triangulation(const TpVecVmTri& nVecVmTri, cv::Vec3f& Ptw){
+}
+
 bool triangulation(const cv::Matx33f& Pl, const cv::Matx44f& Tl, const cv::Point2f& Ptl,
                    const cv::Matx33f& Pr, const cv::Matx44f& Tr, const cv::Point2f& Ptr, cv::Vec3f& Ptw)
 {

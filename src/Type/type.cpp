@@ -5,9 +5,11 @@
 namespace PKVIO{
 namespace Type{
     
-const TpFrameID     INVALIDFRAMEID      = -1;     
-const TpKeyPointID  INVALIDKEYPOINTID   = -1;     
-const TpMapPointID  INVALIDMAPPOINTID   = -1;
+const TpFrameID         INVALIDFRAMEID      = -1;     
+const TpKeyPointID      INVALIDKEYPOINTID   = -1;     
+const TpKeyPointIndex   INVALIDKEYPOINTINDEX= -1;     
+const TpMapPointID      INVALIDMAPPOINTID   = -1;
+
 
 
 namespace TypeConvertor{

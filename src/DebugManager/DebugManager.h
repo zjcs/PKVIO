@@ -40,7 +40,7 @@ public:
     
     int  mMaxGraphDepthToBuildCoVis = 2;        // 1 or 2 means only self and track frames relationship;
     
-    bool mBoolShowMatchResult       = true;
+    bool mBoolShowMatchResult       = false;
     bool mBoolShowMatchResultWaitKey= false;
     
     bool mBoolLogSolverVtxEdgInfo   = false;

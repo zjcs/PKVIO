@@ -18,7 +18,8 @@ class CoVisManager
 {
 public:
     CoVisManager();
-    typedef std::function<TpVecFrameID(const TpFrameID)> TpFuncGetCoVisKFFrameID;
+    typedef std::function<TpVecFrameID(const TpFrameID)>         TpFuncGetCoVisKFFrameID;
+    typedef std::vector<std::pair<TpFrameID, TpKeyPointIndex >>  TpVecFrameIDKptIndexPair;
     void                        initCallBackFuncGetLastKFs(TpFuncGetCoVisKFFrameID nFunc){mFuncGetCoVisKFFrameID = nFunc;}
     
     void                        solve(const Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult);
@@ -29,6 +30,8 @@ public:
     
     TpVecMatchResult            getCoVis(const TpFrameID nFrameIDFrom, const TpFrameID nFrameIDTo);
     void                        getCoVis(const TpFrameID nFrameIDFrom, const TpFrameID nFrameIDTo, TpVecMatchResult& nCoVisMatch);
+    
+    std::vector<TpVecFrameIDKptIndexPair> getCoVis(const TpFrameID nFrameIDFrom, const TpVecKeyPointID& nVecKptID);
     
     inline KeyPointManager::TpOneFrameIDManager& 
                                 getCurrentFrameKptIDMgr(void){

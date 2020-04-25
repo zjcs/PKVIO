@@ -77,6 +77,7 @@ public:
                                             assert(nSet.size() == sizeKeyPointsWithID());
                                             return nSet;
                                         }
+    
     TpVecKeyPointIndex                  getAllKeyPointIndexsWithID(void){
                                             int nSzKptIDs = sizeKeyPointsWithID();
                                             TpVecKeyPointIndex nVecKptIndexs;
@@ -84,6 +85,30 @@ public:
                                             for(int nKptIdx = 0,nSzKpts = (int)mVecKeyPointIDs.size();nKptIdx!=nSzKpts;++nKptIdx){
                                                 if(Type::isValideKeyPointID(mVecKeyPointIDs[nKptIdx])){
                                                     nVecKptIndexs.push_back(nKptIdx);
+                                                }
+                                            }
+                                            return nVecKptIndexs;
+                                        }
+    std::map<TpKeyPointID, TpKeyPointIndex> getMapKptID2KptIndex(void){
+                                            std::map<TpKeyPointID, TpKeyPointIndex> nMap;
+                                            for(int nKptIdx = 0,nSzKpts = (int)mVecKeyPointIDs.size();nKptIdx!=nSzKpts;++nKptIdx){
+                                                if(Type::isValideKeyPointID(mVecKeyPointIDs[nKptIdx])){
+                                                     nMap[mVecKeyPointIDs[nKptIdx]]=nKptIdx;
+                                                }
+                                            }
+                                            return nMap;
+                                        }
+    
+    TpVecKeyPointIndex                  getKptIndex(const TpVecKeyPointID& nVecKptID){
+                                            auto nMap = getMapKptID2KptIndex();
+                                            
+                                            TpVecKeyPointIndex nVecKptIndexs;
+                                            for(int nKptIdx = 0,nSzKpts = (int)nVecKptID.size();nKptIdx!=nSzKpts;++nKptIdx){
+                                                auto Iter = nMap.find(nVecKptID[nKptIdx]);
+                                                if(Iter != nMap.end()){
+                                                    nVecKptIndexs.push_back(Iter->second);
+                                                }else{
+                                                    nVecKptIndexs.push_back(Type::INVALIDKEYPOINTINDEX);
                                                 }
                                             }
                                             return nVecKptIndexs;
@@ -135,6 +160,11 @@ public:
                                             return getOneFrameIDManagerByFrameIndex(nFrameIndex).getKeyPointID(nKeyPointIndexInThisFrame); 
                                         }
     
+    inline const TpFrameID              getFrameID(const TpFrameIndex nFrameIndex)const{
+                                            if(nFrameIndex>=mSetFrameIndex2FrameID.size())
+                                                throw;
+                                            return mSetFrameIndex2FrameID[nFrameIndex];
+                                        }
     inline const TpFrameIndex           getFrameIndex(const TpFrameID nFrameID)const{
                                             auto FindIter = mSetFrameID2FrameIndex.find(nFrameID);
                                             if(FindIter == mSetFrameID2FrameIndex.end())
