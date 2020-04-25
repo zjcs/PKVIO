@@ -144,5 +144,21 @@ cv::Vec2f projectError(const cv::Matx33f& P, const cv::Matx44f& T, const cv::Vec
     return project(P,T,pt) - pt2d;
 }
 
+std::vector<cv::Point2f> cvt(const std::vector<cv::KeyPoint>& vKpts){
+    std::vector<cv::Point2f> vpt(vKpts.size());
+    for(int nIdx=0,nSz=vKpts.size();nIdx<nSz;++nIdx){
+        vpt[nIdx] = vKpts[nIdx].pt;
+    }
+    return vpt;
+}
+
+std::vector<cv::KeyPoint> cvt(const std::vector<cv::Point2f>& vpt){
+    std::vector<cv::KeyPoint> vKpt(vpt.size());
+    for(int nIdx=0,nSz=vpt.size();nIdx<nSz;++nIdx){
+        vKpt[nIdx] = cv::KeyPoint(vpt[nIdx], 1);
+    }
+    return vKpt;
+}
+
 }
 }

@@ -32,8 +32,9 @@ public:
     
     inline FrameMatchResult&    getFrameMatchResult(void){return mFrameMatchResult;}
     
+    inline FrameMatchResultHistory& 
+                                getFrameMatchResultHistory(void){return mFrameMatchResultHistoryRecord;}
     inline StereoFrameHistory&  getStereoFrameHistory(void){return mFrameHistoryRecord;}
-    
     inline FrameKptsDescriptorHistory& getFrameKptsDescriptorHistory(void){return mFrameKptsDescriptorHistoryRecord;}
 
     cv::Mat                     showMatchResult(const TpOneFrameKptDescriptor& fKptsDesc, const TpDescriptorMatchResult& mBestVecMatchResult, const string sWindowTitle = "mBestMatch");
@@ -52,6 +53,8 @@ public:
 protected:
     void                        track(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
                                       TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult);
+    void                        trackByOpticalFlow(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
+                                      TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult, FrameMatchResult& nPrevFrameMatchResult);
     
     void                        trackBySimulator(const Frame& fCurFrame, TpOneFrameKptDescriptor& nKptsDescriptors,
                                       TpDescriptorMatchResult& nInnerMatchResult, vector<TpDescriptorMatchResult>& nOuterMatchResult);

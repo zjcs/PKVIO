@@ -12,6 +12,10 @@ namespace Compare{
         return isInRange<float>(p.x, 0, nWinSz.width) && isInRange<float>(p.y, 0, nWinSz.height);
     }
     
+    inline bool isInWindow (const cv::Point& p, const cv::Rect& nRect){
+        return isInRange<float>(p.x, nRect.x, nRect.x+nRect.width) && isInRange<float>(p.y, nRect.y, nRect.y+nRect.height);
+    }
+    
 }
 }
 

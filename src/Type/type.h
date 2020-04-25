@@ -28,6 +28,7 @@ using namespace PKVIO::IDGenerator;
 typedef cv::KeyPoint                    TpKeyPoint;
 typedef std::vector<cv::KeyPoint>       TpVecKeyPoints;
 typedef cv::Mat                         TpVecDescriptor;
+typedef std::vector<cv::Point2f>        TpVecPoint2f;
 
 typedef cv::DMatch                      TpOneMatchResult;
 typedef vector<cv::DMatch>              TpVecMatchResult;

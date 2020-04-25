@@ -26,6 +26,7 @@ public:
     int  mCountMaxCoVisFrame        = 0; //100;     // only the nearest frame camera pose will be optimizated, 0 means no limitation.
     
     bool mBoolUseSimulator          = false;
+    bool mBoolTrackByOpticalFlow    = true;
     
     bool mBoolUseG2OSolver          = true;
     bool mBoolUseCoVisMgr           = true;
@@ -39,13 +40,16 @@ public:
     
     int  mMaxGraphDepthToBuildCoVis = 2;        // 1 or 2 means only self and track frames relationship;
     
-    bool mBoolShowMatchResult       = false;
+    bool mBoolShowMatchResult       = true;
+    bool mBoolShowMatchResultWaitKey= false;
     
     bool mBoolLogSolverVtxEdgInfo   = false;
-    bool mBoolLogStereoTriangular   = true;
+    bool mBoolLogStereoTriangular   = false;
     
-    bool mBoolTriangularByInverseDepth = true;
-    bool mBoolAddStereoMatchInSolver   = false;
+    bool mBoolTriangularByInverseDepth = false;
+    bool mBoolAddStereoMatchInSolver   = true;
+    
+    bool mBoolSolverUseOnlyCoVisKpt    = false;
     
     const std::string str(void)const{
         stringstream s;

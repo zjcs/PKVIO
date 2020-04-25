@@ -78,12 +78,17 @@ public:
                         // not found, errro call; should call isExisting() before get();
                         throw;
                     }
-    inline T&       back(void){return mHistory.back();}
+    inline T&       back(void){ if(mHistory.empty())throw; return mHistory.back();}
     inline T&       getLastOne(void){return back();}
+    
+    // nSz: -1 means no limition.
     TpVecTs         getLastSeveral(int nSz, std::function<bool(T&)> bFuncIsThisToBeExcluded = [](T&)->bool{return false;}){
                         TpVecTs vTs;
-                        vTs.reserve(nSz);
-                        for(auto iter = mHistorySpecial.rbegin(), EndIter = mHistorySpecial.rend(); iter!=EndIter && vTs.size() < nSz; ++iter) {
+                        
+                        if(nSz>0) 
+                            vTs.reserve(nSz);
+                        
+                        for(auto iter = mHistorySpecial.rbegin(), EndIter = mHistorySpecial.rend(); iter!=EndIter && (nSz <0 || vTs.size() < nSz); ++iter) {
                             vTs.push_back(*iter);
                         }
                         // free the memory of last NotUsed place.

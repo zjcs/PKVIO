@@ -14,6 +14,8 @@ namespace Solver
         
         TpKeyPoint          mKeyPoint;
         TpPtrMapPoint3D     mMapPoint3D;
+        
+        bool                mBoolRight;
     };
     
     typedef vector<TpVisualMeasurement> TpVecVisualMeasurement;

@@ -15,6 +15,7 @@ using namespace Timer;
 void getScreenWindowSize(int& nWidth, int& nHeight);
 inline cv::Size getScreenWindowSize(void){ int nWidth,nHeight; Tools::getScreenWindowSize(nWidth, nHeight); return cv::Size(nWidth,nHeight); };
 
+
 template<typename T>
 void filter(vector<T>& nVecInput, const vector<bool>& nFilterTrueSave){
     int nIdxToWrite=0;
@@ -32,6 +33,15 @@ void filter(vector<T>& nVecInput, const vector<bool>& nFilterTrueSave){
     nVecInput.erase(nIterRemove, nVecInput.end());
     
     //for(int nIdx=0,nSz=nVecInput.size();nIdx<nSz;++nIdx){ cout << "nCoVis3:" << nIdx << " - " << nVecInput[nIdx] <<endl; }
+}
+
+template<typename T>
+void filter(vector<T>& nVecInput, const vector<uchar>& nFilterTrueSave){
+    vector<bool> nFilerBool(nFilterTrueSave.size(), false);
+    for(int nIdx=0,nSz=nFilterTrueSave.size();nIdx<nSz;++nIdx){
+        nFilerBool[nIdx] = nFilterTrueSave[nIdx]!=0;
+    }
+    return filter<T>(nVecInput, nFilerBool);
 }
 
 bool triangulation(const cv::Point2f& Pl2D, const cv::Point2f& Pr2D, const float fx, const float& nBaseline, float& nDepthInLeftView);

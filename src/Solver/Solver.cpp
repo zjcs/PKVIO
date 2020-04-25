@@ -17,6 +17,8 @@
 #include "../DebugManager/DebugManager.h"
 #include "../Tools/Timer.h"
 
+#include "g2oEdgeSE3Self.h"
+
 namespace PKVIO {
 namespace Solver {
 Solver::Solver() 
@@ -50,6 +52,18 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
     Timer::Timer nTimerSolver("G2OSolver", true);
     cout << "Solver: Camera|MpPnt|VisualMeasure: " << nMapFrameID2CameraPose.size()
          << "|" <<nMapMapPointID2MapPoint3D.size() << "|" <<nVecVisualMeasurement.size() <<endl;
+    cout << "nPrTPl:" << endl << nPtrCameraStereo->getTranslateCvtPtLViewToRView().get() << endl;
+        // log: #1. output the co-vis kpt number among frames
+        //      #2. try to use optical flow to track KeyPoint
+        //      #3. try to use sliding window(m Frames + n Key Frames) to optimize pose.
+        //      #4. try to erase mappoint without enough co-vis or depth 
+        //      #5. try to fix the first key frame's camera pose of input keyframes.
+        //      #6. try to test the performance of inverse depth
+    std::map<TpMapPointID, TpVecFrameID> nCountMp;
+    for(int nIdxVm=0,nSzVm=nVecVisualMeasurement.size();nIdxVm<nSzVm;++nIdxVm){
+        const TpVisualMeasurement& vm = nVecVisualMeasurement[nIdxVm];
+        nCountMp[vm.mMapPointID].push_back(vm.mFrameID);
+    }
     
     int     nIterations = 10;
     bool    bRobust     = true;
@@ -103,21 +117,40 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
         vPoint->setFixed(DebugManager::DebugControl().mBoolMapPointFixed);
         optimizer.addVertex(vPoint);
         
-        if(DebugManager::DebugControl().mBoolLogSolverVtxEdgInfo)
-            cout << "MpPnt ID-Value: " << nMapPointID << " - " << nMapPoint3D << endl;
+        if(DebugManager::DebugControl().mBoolLogSolverVtxEdgInfo){
+            auto& nVecCoVisFrame = nCountMp[nMapPointID];
+            cout << "MpPnt ID-Value-Frame-Measure: " << nMapPointID << " - " << nMapPoint3D << " - " 
+                 << TpSetFrameID(nVecCoVisFrame.begin(), nVecCoVisFrame.end()).size() << " - " << nVecCoVisFrame.size()
+                 << endl;
+        }
     }
     
     for(auto Iter=nVecVisualMeasurement.begin(),EndIter=nVecVisualMeasurement.end();Iter!=EndIter;++Iter){
         const TpVisualMeasurement& nVisualMeasurement = *Iter;
+        if(!DebugManager::DebugControl().mBoolAddStereoMatchInSolver && nVisualMeasurement.mBoolRight)
+            continue;
+        
         const TpKeyPoint&          nKeyPoint = nVisualMeasurement.mKeyPoint;
         // undistor;
         TpKeyPoint nKeyPointUndistor = nKeyPoint;
         
         Eigen::Matrix<double,2,1> obs;
         obs << nKeyPointUndistor.pt.x, nKeyPointUndistor.pt.y;
-        
 
-        g2o::EdgeSE3ProjectXYZ* e = new g2o::EdgeSE3ProjectXYZ();
+        g2o::EdgeSE3ProjectXYZ* e = [&]()-> g2o::EdgeSE3ProjectXYZ*{
+            if(nVisualMeasurement.mBoolRight){
+                return  new g2o::EdgeSE3ProjectXYZRight2(Converter::toSE3Quat(cv::Mat(nPtrCameraStereo->getTranslateCvtPtLViewToRView().get())));
+            }else{
+                return new g2o::EdgeSE3ProjectXYZRight2(Converter::toSE3Quat(cv::Mat(cv::Matx44f::eye())));            
+                //: new g2o::EdgeSE3ProjectXYZ();
+                //return new g2o::EdgeSE3ProjectXYZ2();
+            }
+        }();
+        
+        e->fx = nPtrCameraStereo->getInnerParam().getfx();
+        e->fy = nPtrCameraStereo->getInnerParam().getfy();
+        e->cx = nPtrCameraStereo->getInnerParam().getcx();
+        e->cy = nPtrCameraStereo->getInnerParam().getcy();
 
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nVisualMeasurement.mMapPointID+nGraphNodeID+1)));
         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nVisualMeasurement.mFrameID)));
@@ -130,17 +163,11 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
             e->setRobustKernel(rk);
             rk->setDelta(thHuber2D);
         }
-
-        e->fx = nPtrCameraStereo->getInnerParam().getfx();
-        e->fy = nPtrCameraStereo->getInnerParam().getfy();
-        e->cx = nPtrCameraStereo->getInnerParam().getcx();
-        e->cy = nPtrCameraStereo->getInnerParam().getcy();
-        
         
         if(DebugManager::DebugControl().mBoolLogSolverVtxEdgInfo){
             e->computeError();
             auto err = e->error();
-            cout << "Measu ID-FrmID-MpID-Value-Error: " << nKeyPoint.class_id << " - " <<nVisualMeasurement.mFrameID <<"-" << nVisualMeasurement.mMapPointID<<"-" << nKeyPointUndistor.pt <<"-"<<err.transpose()<< endl;
+            cout << "Measu ID-FrmID-MpID-Value-Error: " << nKeyPoint.class_id << (nVisualMeasurement.mBoolRight?"(R)":"L") << " - " <<nVisualMeasurement.mFrameID <<"-" << nVisualMeasurement.mMapPointID<<"-" << nKeyPointUndistor.pt <<"-"<<err.transpose()<< endl;
         }
 
         optimizer.addEdge(e);

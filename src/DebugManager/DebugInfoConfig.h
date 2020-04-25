@@ -104,7 +104,7 @@ public:
     virtual const string    str() const override {
         stringstream sStrStream;    
         sStrStream  <<"KeyFrameGenerate - FrameID | AccNewKptID | TrackedKptID | TrackedMapPoint | CreateNewMapPointID "<<endl
-                    << mStrKeyFrameGeneration << "| FrameID:"<< mFrameID << " LastKeyFrameID: " << mLastKeyFrameID << endl
+                    << mStrKeyFrameGeneration << "| FrameID:"<< mFrameID << " LastKeyFrameID: " << mLastKeyFrameID //<< endl
                     << STR5BEGIN <<mFrameID <<STR1l1SEP<<nCountFirstDetectedKptIDs << STR1l1SEP << nCountTrackedKptIDs << STR1l1SEP << nCountTrackedMapPoint 
                     << STR1l1SEP << nCountFirstDetectedKptIDToMapIDs  <<endl
                     << STR4BEGIN << "TimeCost-Whole|CountTrack|AccNewKptID|Generate|AddMeasurement:"<<endl

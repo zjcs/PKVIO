@@ -203,6 +203,8 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
         }
     }
     
+    cout << "add CoVis: By Frame|KeyFrame..." <<endl;
+    
     //cout << "build covis begin ..." <<endl;
     mPtrCoVisGraph->buildCoVisBetween(nVecCoVisFramePairAndWeight);
     //cout << "build covis end ..." <<endl;
@@ -220,7 +222,7 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
 void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame) {
     // it's better to be implemented by adviser-notifier.
     //TODO
-    
+    cout << "add CoVis: By CoVisGraph BFS..." <<endl;
     auto FuncVisitNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
         bool nbIsNodeCurFrame = (pNodeFrom == nullptr);
         if(nbIsNodeCurFrame) return;
@@ -242,6 +244,7 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame) {
 void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const Type::TpVecFrameID& nVecFrameIDsDirectAdjoin) 
 {
     //cout << "update covis graph begin ..." <<endl;
+    cout << "add CoVis: By CoVisGraph BFS" <<endl;
     
     TpSetFrameID nSetFrameIDsDirectAdjoinToCurFrame(nVecFrameIDsDirectAdjoin.begin(),nVecFrameIDsDirectAdjoin.end());
     auto FuncVisitNode = [&](CoVisGraph::TpPtrNode& pNodeFrom, CoVisGraph::TpPtrNode& pNodeTo){
