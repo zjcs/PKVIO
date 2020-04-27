@@ -34,7 +34,7 @@ TpDescriptorMatchResult DescriptorMatch::match(const PKVIO::KeyPointManager::TpO
     switch(mEnMatchMethod){
         case EnKnnWholeImage: nMatResult = matchByKnn(fKptsDesc); break;
         case EnBrutForceInWindow: nMatResult = matchByBrutForceInWindow(fKptsDesc); break;
-        default: throw;
+        default: cout << "Not Implemnt match method" <<endl; throw;
     }
     return removeDuplicatedMatchM1vSn(fKptsDesc, nMatResult);
 }

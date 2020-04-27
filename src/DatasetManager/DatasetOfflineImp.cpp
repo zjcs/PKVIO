@@ -50,6 +50,7 @@ Type::FrameInfo DatasetOfflineImp::getFrameInfor ( const Type::TpFrameID nFrmID 
         mFrmInfo.mStrFileAbsName = getFrameAbsFileNmae(mFrmInfo.mFrameIndex, true);
         return mFrmInfo;
     }
+    cout << "Error: TODO:DatasetOfflineImp::getFrameInfor " <<endl;
     throw;
     return FrameInfo();
 }

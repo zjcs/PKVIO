@@ -227,6 +227,7 @@ void DatasetEuRoc::parseCalibration() {
         mPtrCameraStereo->setCameraOuterParamCvtPtLViewToRView(nCameraPrTPlUndistor);
     }else{
         // TODO: camera param(RT) still have some problem
+        cout << "TODO: camera param(RT) still have some problem" <<endl;
         throw;
     }
     cout << "EuRoc Sensor Config:" << endl << mPtrCameraStereo->str() <<endl;

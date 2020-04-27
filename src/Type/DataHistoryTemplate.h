@@ -76,9 +76,16 @@ public:
                                 return h;
                         }
                         // not found, errro call; should call isExisting() before get();
+                        cout << "Error: DataHistoryTemplate::get not found..." <<endl;
                         throw;
                     }
-    inline T&       back(void){ if(mHistory.empty())throw; return mHistory.back();}
+    inline T&       back(void){ 
+                        if(mHistory.empty()){
+                            cout << "Error: DataHistoryTemplate::back empty..." <<endl;
+                            throw;
+                        } 
+                        return mHistory.back();
+                    }
     inline T&       getLastOne(void){return back();}
     
     // nSz: -1 means no limition.

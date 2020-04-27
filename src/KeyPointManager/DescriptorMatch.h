@@ -116,8 +116,10 @@ public:
         mVecDescriptorMatchResult.insert(mVecDescriptorMatchResult.begin(), mInnerFrameDescMatchResult);
     }
     const TpDescriptorMatchResult&          getInnerFrameDescriptorMatchResult(void) const {
-        if(!mbInnerFrameDescriptorMatchResult)
+        if(!mbInnerFrameDescriptorMatchResult){
+            cout << "Error: no inner frame match result..." <<endl;
             throw;
+        }
         return mVecDescriptorMatchResult[0];
     }
     

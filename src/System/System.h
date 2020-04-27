@@ -42,6 +42,9 @@ protected:
 private:
     cv::Matx44f solverCurrentFramePose(const TpFrameID nFrameIDCur);
     
+    void        triangularMapPoint(Frame& mCurFrame);
+    
+    
     void debugCountTrackingKptIDWihtMapPointID(Type::Frame& fFrame, const KeyPointManager::FrameMatchResult& mFrameMatchResult, KeyPointManager::TpOneFrameIDManager& mFrameKptIDMgr);
    
     map<TpFrameID, map<TpKeyPointIndex, TpPtrMapPoint3D>> nMapMap3D;

@@ -3,6 +3,7 @@
 
 #include<vector>
 #include "Frame.h"
+#include <iostream>
 
 using namespace std;
 
@@ -150,6 +151,7 @@ bool                QueryNodeByFunc(EqualFunc f){
                             }else if(eResult == EnBreak || eResult == EnReturn) {
                                 return true;
                             }else if(eResult != EnExec){
+                                std::cout << "Error: QueryNodeByFunc EnExec..." << std::endl;
                                 throw;
                             }
                         }

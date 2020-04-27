@@ -59,8 +59,10 @@ void KeyFrameManager::solve(Type::Frame& fFrame, const KeyPointManager::FrameMat
         case EnNeedKF: 
             createOneKeyFrame(fFrame, mFrameMatchResult, mFrameKptIDMgr);
             break;
-        case EnLost:
+        case EnLost:{
+            cout << "Error: Lost..." <<endl;
             throw;
+        }
         case EnNonKF: 
             break;
         default: ;

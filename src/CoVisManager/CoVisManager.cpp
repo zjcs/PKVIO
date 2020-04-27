@@ -161,8 +161,10 @@ int CoVisManager::copyIDToCurFrameOrGenerateIDForBothMatchFrames(const KeyPointM
                     }
                 }
             }else{
-                if(nBoolCoVis)
+                if(nBoolCoVis){
+                    cout << "Erro: should not happen in new kpt generation.." <<endl;
                     throw;
+                }
             }
             
             if(nBoolCoVis){
@@ -282,6 +284,7 @@ void CoVisManager::updateCoVisGraph(CoVisGraph::TpPtrNode& pNodeCurFrame, const 
 TpVecCoVisFrameIDs CoVisManager::getCoVisFrameIDs(const Type::TpFrameID nFrameIDQuery) const {
     TpVecCoVisFrameIDs vCoVisFrameIDs;
     //TODO
+    cout << "TODO: getCoVisFrameIDs ... " <<endl;
     throw;
     return vCoVisFrameIDs;
 }

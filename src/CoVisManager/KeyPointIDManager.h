@@ -161,14 +161,19 @@ public:
                                         }
     
     inline const TpFrameID              getFrameID(const TpFrameIndex nFrameIndex)const{
-                                            if(nFrameIndex>=mSetFrameIndex2FrameID.size())
+                                            if(nFrameIndex>=mSetFrameIndex2FrameID.size()){
+                                                cout << "Error: outof the range in KptIDMgr::getFrameID..."
+                                                     << nFrameIndex << "/" << mSetFrameIndex2FrameID.size() << endl;
                                                 throw;
+                                            }
                                             return mSetFrameIndex2FrameID[nFrameIndex];
                                         }
     inline const TpFrameIndex           getFrameIndex(const TpFrameID nFrameID)const{
                                             auto FindIter = mSetFrameID2FrameIndex.find(nFrameID);
-                                            if(FindIter == mSetFrameID2FrameIndex.end())
+                                            if(FindIter == mSetFrameID2FrameIndex.end()){
+                                                cout << "Error: cannot find FrameID in KptIDMgr::getFrameIndex-" << nFrameID<<endl;
                                                 throw;
+                                            }
                                             return FindIter->second;
                                         }
                                         

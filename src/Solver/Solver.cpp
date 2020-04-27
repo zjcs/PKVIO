@@ -52,7 +52,7 @@ void Solver::solve(std::map< Type::TpFrameID, TpPtrCameraPose>& nMapFrameID2Came
     Timer::Timer nTimerSolver("G2OSolver", true);
     cout << "Solver: Camera|MpPnt|VisualMeasure: " << nMapFrameID2CameraPose.size()
          << "|" <<nMapMapPointID2MapPoint3D.size() << "|" <<nVecVisualMeasurement.size() <<endl;
-    cout << "nPrTPl:" << endl << nPtrCameraStereo->getTranslateCvtPtLViewToRView().get() << endl;
+    //cout << "nPrTPl:" << endl << nPtrCameraStereo->getTranslateCvtPtLViewToRView().get() << endl;
         // log: #1. output the co-vis kpt number among frames
         //      #2. try to use optical flow to track KeyPoint
         //      #3. try to use sliding window(m Frames + n Key Frames) to optimize pose.

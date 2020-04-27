@@ -103,6 +103,7 @@ public:
     }
     
     inline const cv::Point2f distor(const cv::Point2f& xUnDistored)const{
+        cout << "Error: distor not imp" <<endl;
         throw;
     }
     
@@ -159,6 +160,7 @@ class TpCameraOuterParam
 public:
     TpCameraOuterParam():mcTw(cv::Matx44f::eye()){}
     TpCameraOuterParam(const cv::Mat& R, const cv::Mat& T):mcTw(cv::Matx44f::eye()){
+        cout << "Error: TpCameraOuterParam not imp" <<endl;
         throw;
     }
     TpCameraOuterParam(const TpTranslate& ncTw):mcTw(ncTw){}

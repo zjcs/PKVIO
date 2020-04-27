@@ -35,6 +35,7 @@ public:
     
     inline KeyPointManager::TpOneFrameIDManager& 
                                 getCurrentFrameKptIDMgr(void){
+                                    cout << "TODO: getCurrentFrameKptIDMgr..."<<endl;
                                     throw;
                                     //TODO: how to get current frame ID.
                                 }

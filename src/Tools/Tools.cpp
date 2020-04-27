@@ -49,16 +49,16 @@ bool triangulation(const TpVecVmTri& nVecVmTri, const cv::Matx33f& Pl, const cv:
         const TpVmTri& nVm = nVecVmTri[nIdxVm];
         const cv::Matx33f& Pr    = nVm.P;
         const cv::Matx44f& PrTPl = nVm.T;
-        cout << "PrTPl:" <<endl << PrTPl <<endl;
+        //cout << "PrTPl:" <<endl << PrTPl <<endl;
         const cv::Point2f& Ptr   = nVm.Pt;
         cv::Vec3f NPr = Pr.inv()*cv::Vec3f(Ptr.x, Ptr.y, 1);
         cv::Matx33f R = PrTPl.get_minor<3,3>(0,0);
         cv::Vec3f   t = (cv::Mat)PrTPl.get_minor<3,1>(0,3);
         cv::Vec3f   b = NPr - R*NPl;
-        cout << "R:" << endl << R <<endl;
+        //cout << "R:" << endl << R <<endl;
         //cout << "m:" << endl << m <<endl;
-        cout << "t:" << endl << t.t() <<endl;
-        cout << "b:" << b.t() <<endl;
+        //cout << "t:" << endl << t.t() <<endl;
+        //cout << "b:" << b.t() <<endl;
         nCoeffA.row(nIdxVm) = b;
         nCoeffb.row(nIdxVm) = t;
     }
@@ -66,7 +66,7 @@ bool triangulation(const TpVecVmTri& nVecVmTri, const cv::Matx33f& Pl, const cv:
     cv::Mat t = nCoeffb.reshape(0,1).t();
     float depth = cv::Mat((b.t()*b).inv()*(b.t()*t)).at<float>(0,0);
     PtInCl = NPl*depth;
-    cout << "triangulation by track - PtInCl:" << PtInCl <<endl;
+    //cout << "triangulation by track - PtInCl:" << PtInCl <<endl;
     return depth<=10e3 && depth>=0.1e3; // depth range [0.5,10]m;
     
 }

@@ -41,8 +41,10 @@ public:
                     
     TpMapPointID    generateOneMapPointID(const TpKeyPointID& nKptID){ 
                         TpMapPointID nMapPointID = mMapPointIDGenerator.create();
-                        if(nMapPointID!=(TpMapPointID)mMapFromMapPointID2KptID.size()) 
+                        if(nMapPointID!=(TpMapPointID)mMapFromMapPointID2KptID.size()) {
+                            cout << "Error: generateOneMapPointID"<<endl;
                             throw;
+                        }
                         mMapFromMapPointID2KptID.push_back(TpMapPoint(nMapPointID, nKptID));
                         
                         if((int)mMapFromKptID2MapPointID.capacity() <= nKptID){
@@ -191,8 +193,10 @@ protected:
     
     inline TpKeyFrameID     generateOneKeyFrame(Type::Frame& fFrame){
                                 TpKeyFrameID nKFID = mKeyFrameIDGenerator.create();
-                                if(nKFID!=(int)mMapKFID2FrameID.size())
+                                if(nKFID!=(int)mMapKFID2FrameID.size()){
+                                    cout << "Error: generateOneKeyFrame."<<endl;
                                     throw;
+                                }
                                 mMapKFID2FrameID.push_back(fFrame.FrameID());
                                 //cout << "add Kf" << nKFID << "|" << fFrame.FrameID() <<endl;
                                 return nKFID;

@@ -43,7 +43,7 @@ cv::Mat cvtMat32fToMat64f(const cv::Mat&T){
                 case 4: 
                     T64.at<cv::Vec4d>(nRow,nCol) = T.at<cv::Vec4f>(nRow,nCol);
                     break;
-                default: throw;
+                default: cout << "Error: cvtMat32fToMat64f not imp"<<endl; throw;
             }
         }
     }
@@ -98,7 +98,7 @@ void cvtProjectionMatrixToFxyCxy(const cv::Mat&P, cv::Vec2f& fxy, cv::Vec2f& cxy
             fxy = cv::Vec2f(P.at<double>(0,0), P.at<double>(1,1));
             cxy = cv::Vec2f(P.at<double>(0,2), P.at<double>(1,2));
         }break;
-        default: throw;
+        default: cout << "Error: cvtProjectionMatrixToFxyCxy not imp"<<endl; throw;
     }
 }
 
@@ -123,7 +123,7 @@ cv::Matx44f cvtR33T31ToMatx44f(const cv::Mat& R, const cv::Mat&t)
                 }
             }
         }break;
-        default: throw;
+        default: cout << "Error: cvtR33T31ToMatx44f not imp"<<endl; throw;
     }
     return T;
 }
